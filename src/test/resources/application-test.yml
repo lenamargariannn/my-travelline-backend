@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mytravelline_test
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: dGVzdC1zZWNyZXQta2V5LWZvci1qdW5pdC10ZXN0aW5nLW11c3QtYmUtYXQtbGVhc3QtMjU2LWJpdHM=
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
+  cors:
+    allowed-origins: http://localhost:5173
+  s3:
+    bucket: test-bucket
+    region: us-east-1
+  ses:
+    from-email: test@mytravelline.com
+    region: us-east-1
+
+logging:
+  level:
+    root: WARN
+    com.mytravelline: DEBUG

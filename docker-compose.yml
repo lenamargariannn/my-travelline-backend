@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mytravelline-db
+    environment:
+      POSTGRES_DB: mytravelline
+      POSTGRES_USER: mytravelline
+      POSTGRES_PASSWORD: localpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mytravelline"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: mytravelline-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/mytravelline
+      DB_USER: mytravelline
+      DB_PASSWORD: localpassword
+      JWT_SECRET: dev-only-secret-key-change-in-production-minimum-256-bits-long
+      MEDIA_BUCKET: mytravelline-media-dev
+      ALLOWED_ORIGINS: http://localhost:5173
+      AWS_REGION: us-east-1
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

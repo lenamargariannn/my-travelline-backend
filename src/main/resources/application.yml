@@ -1,0 +1,83 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: my-travelline-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mytravelline}
+    username: ${DB_USER:mytravelline}
+    password: ${DB_PASSWORD:localpassword}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# Application custom properties
+app:
+  jwt:
+    secret: ${JWT_SECRET:default-dev-secret-key-must-be-at-least-256-bits-long-for-hs256}
+    access-token-expiration: 900000
+    refresh-token-expiration: 604800000
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173}
+  s3:
+    bucket: ${MEDIA_BUCKET:mytravelline-media-dev}
+    region: ${AWS_REGION:us-east-1}
+  ses:
+    from-email: ${SES_FROM_EMAIL:noreply@mytravelline.com}
+    region: ${AWS_REGION:us-east-1}
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.mytravelline: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# SpringDoc OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method

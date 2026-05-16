@@ -1,0 +1,29 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+
+  flyway:
+    baseline-on-migrate: false
+
+# Logging - JSON format for CloudWatch
+logging:
+  level:
+    com.mytravelline: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: '{"timestamp":"%d{ISO8601}","level":"%level","logger":"%logger","message":"%msg","thread":"%thread"}%n'
+
+# Actuator - restrict in production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never

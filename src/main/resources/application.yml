@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: my-travelline-backend
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/mytravelline}
+    username: ${DB_USER:mytravelline}
+    password: ${DB_PASSWORD:mytravelline}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+        format_sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-me-change-me-change-me-change-me-1234567890}
+    access-token-expiration-ms: 900000
+    refresh-token-expiration-ms: 604800000
+    issuer: my-travelline
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+  storage:
+    s3:
+      bucket: ${MEDIA_BUCKET:mytravelline-media-dev}
+      region: ${AWS_REGION:eu-central-1}
+      public-base-url: ${MEDIA_PUBLIC_BASE_URL:}
+  mail:
+    from: ${MAIL_FROM:noreply@mytravelline.com}
+    region: ${AWS_REGION:eu-central-1}
+
+logging:
+  level:
+    root: INFO
+    com.mytravelline: DEBUG

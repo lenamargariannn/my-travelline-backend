@@ -19,6 +19,7 @@
 
     <properties>
         <java.version>25</java.version>
+        <flyway.version>12.6.1</flyway.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok.version>1.18.42</lombok.version>
         <jjwt.version>0.13.0</jjwt.version>

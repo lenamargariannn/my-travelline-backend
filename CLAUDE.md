@@ -96,7 +96,7 @@ Backend CI/CD uses GitHub Actions.
 
 1. Checks out the repository.
 2. Sets up Java 25.
-3. Builds the Spring Boot fat JAR: `./mvnw clean package -DskipTests`.
+3. Builds the Spring Boot fat JAR: `mvn clean package -DskipTests -B`.
 4. Authenticates to AWS via GitHub OIDC (no long-lived credentials — `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must not be used).
 5. Logs in to Amazon ECR.
 6. Builds and pushes a Docker image with two tags:

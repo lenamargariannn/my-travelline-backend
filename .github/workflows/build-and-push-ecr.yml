@@ -10,8 +10,8 @@ permissions:
 
 env:
   AWS_REGION: eu-north-1
-  ECR_REPOSITORY: my-travelline-backend
-  ECR_IMAGE_URI: 947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend
+  ECR_REPOSITORY: mytravelline-backend
+  ECR_IMAGE_URI: 947927347939.dkr.ecr.eu-north-1.amazonaws.com/mytravelline-backend
 
 jobs:
   build-and-push:

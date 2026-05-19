@@ -1,7 +1,9 @@
-name: Build and Push to ECR
+name: CI/CD
 
 on:
   push:
+  pull_request:
+    branches: [main, develop]
 
 permissions:
   id-token: write
@@ -15,6 +17,21 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: mytravelline_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,8 +41,24 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Build
-        run: mvn clean package -DskipTests -B
+      - name: Build and test
+        run: mvn clean verify -B
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          DB_URL: jdbc:postgresql://localhost:5432/mytravelline_test
+          DB_USER: test
+          DB_PASSWORD: test
+          JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1waXBlbGluZS1tdXN0LWJlLWF0LWxlYXN0LTI1Ni1iaXRz
+          MEDIA_BUCKET: test-bucket
+          ALLOWED_ORIGINS: http://localhost:5173
+          AWS_REGION: us-east-1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: target/surefire-reports/
 
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'

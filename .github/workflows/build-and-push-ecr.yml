@@ -34,7 +34,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::947927347939:role/github-actions-my-travelline-backend-prod
+          role-to-assume: arn:aws:iam::947927347939:role/github-actions-mytravelline-backend-prod
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR

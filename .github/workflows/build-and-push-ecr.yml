@@ -2,7 +2,6 @@ name: Build and Push to ECR
 
 on:
   push:
-    branches: [main]
 
 permissions:
   id-token: write
@@ -10,37 +9,37 @@ permissions:
 
 env:
   AWS_REGION: eu-north-1
-  ECR_REPOSITORY: mytravelline-backend
   ECR_IMAGE_URI: 947927347939.dkr.ecr.eu-north-1.amazonaws.com/mytravelline-backend
 
 jobs:
-  build-and-push:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '25'
           distribution: temurin
           cache: maven
 
-      - name: Build JAR
+      - name: Build
         run: mvn clean package -DskipTests -B
 
       - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::947927347939:role/github-actions-mytravelline-backend-prod
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Log in to Amazon ECR
+        if: github.ref == 'refs/heads/main'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push Docker image
+        if: github.ref == 'refs/heads/main'
         run: |
           docker build -t ${{ env.ECR_IMAGE_URI }}:${{ github.sha }} .
           docker tag ${{ env.ECR_IMAGE_URI }}:${{ github.sha }} ${{ env.ECR_IMAGE_URI }}:latest

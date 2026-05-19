@@ -84,6 +84,54 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `AWS_REGION` | `us-east-1` | AWS region for S3 and SES |
 | `SES_FROM_EMAIL` | `noreply@mytravelline.com` | SES sender address |
 
+## CI/CD
+
+Backend CI/CD uses GitHub Actions.
+
+**Workflow file:** `.github/workflows/build-and-push-ecr.yml`
+
+**Trigger:** push to `main` branch only.
+
+### What the workflow does
+
+1. Checks out the repository.
+2. Sets up Java 25.
+3. Builds the Spring Boot fat JAR: `./mvnw clean package -DskipTests`.
+4. Authenticates to AWS via GitHub OIDC (no long-lived credentials — `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must not be used).
+5. Logs in to Amazon ECR.
+6. Builds and pushes a Docker image with two tags:
+   - `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend:latest`
+   - `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend:${GITHUB_SHA}`
+
+> ECS deployment is **not** part of this workflow. Do not add it unless explicitly requested.
+
+### Required permissions
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+```
+
+### AWS configuration
+
+| Value | Setting |
+|---|---|
+| AWS region | `eu-north-1` |
+| AWS account ID | `947927347939` |
+| ECR repository | `my-travelline-backend` |
+| ECR image URI | `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend` |
+| GitHub Actions IAM role | `arn:aws:iam::947927347939:role/github-actions-my-travelline-backend-prod` |
+
+### Official actions
+
+| Step | Action |
+|---|---|
+| Checkout | `actions/checkout@v4` |
+| Java setup | `actions/setup-java@v4` |
+| AWS credentials | `aws-actions/configure-aws-credentials@v4` |
+| ECR login | `aws-actions/amazon-ecr-login@v2` |
+
 ## Related Projects
 
 This backend works together with the frontend project located at:

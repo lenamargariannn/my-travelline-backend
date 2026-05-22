@@ -4,6 +4,7 @@ import com.mytravelline.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -35,7 +36,24 @@ public class SecurityConfig {
             .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                // Public endpoints
+                .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/destinations/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/blog/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/gallery/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/bookings").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
+                // Auth
+                .requestMatchers("/api/admin/auth/**").permitAll()
+                // Actuator & docs
+                .requestMatchers("/actuator/**").permitAll()
+                .requestMatchers("/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                // Admin endpoints require authentication
+                .requestMatchers("/api/admin/**").authenticated()
+                // All other requests
+                .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

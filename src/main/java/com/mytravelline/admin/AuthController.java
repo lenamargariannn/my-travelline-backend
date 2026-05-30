@@ -8,6 +8,7 @@ import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
@@ -47,6 +49,7 @@ public class AuthController {
                 .build();
 
         adminUserRepository.save(newUser);
+        log.info("Admin user created: email={}, role={}", newUser.getEmail(), newUser.getRole());
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(newUser.getEmail());
         String accessToken = jwtService.generateAccessToken(userDetails);
@@ -84,6 +87,7 @@ public class AuthController {
                 .role(adminUser.getRole().name())
                 .build();
 
+        log.info("Admin login: email={}", adminUser.getEmail());
         return ResponseEntity.ok(response);
     }
 

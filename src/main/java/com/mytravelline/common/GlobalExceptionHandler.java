@@ -29,6 +29,8 @@ public class GlobalExceptionHandler {
                 .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
 
+        log.warn("Validation failed on {} {}: {}", request.getMethod(), request.getRequestURI(), fieldErrors);
+
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.BAD_REQUEST.value())
@@ -45,6 +47,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleResourceNotFound(
             ResourceNotFoundException ex, HttpServletRequest request) {
 
+        log.warn("Resource not found on {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
@@ -59,6 +63,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ApiError> handleBadRequest(
             BadRequestException ex, HttpServletRequest request) {
+
+        log.warn("Bad request on {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
 
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
@@ -75,6 +81,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
 
+        log.warn("Failed login attempt on {} from IP {}", request.getRequestURI(), request.getRemoteAddr());
+
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
@@ -89,6 +97,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiError> handleAccessDenied(
             AccessDeniedException ex, HttpServletRequest request) {
+
+        log.warn("Access denied on {} {} for principal '{}'",
+                request.getMethod(), request.getRequestURI(),
+                request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "anonymous");
 
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())

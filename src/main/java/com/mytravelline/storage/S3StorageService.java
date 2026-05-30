@@ -42,6 +42,7 @@ public class S3StorageService {
 
             return key;
         } catch (IOException e) {
+            log.error("Failed to upload file to S3: key={}", key, e);
             throw new RuntimeException("Failed to upload file to S3", e);
         }
     }

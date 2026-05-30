@@ -2,15 +2,19 @@ package com.mytravelline.admin;
 
 import com.mytravelline.admin.dto.LoginRequest;
 import com.mytravelline.admin.dto.LoginResponse;
+import com.mytravelline.admin.dto.SignupRequest;
 import com.mytravelline.admin.dto.TokenRefreshRequest;
+import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +29,38 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final AdminUserRepository adminUserRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @PostMapping("/signup")
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<LoginResponse> signup(@Valid @RequestBody SignupRequest request) {
+        if (adminUserRepository.existsByEmail(request.getEmail())) {
+            throw new BadRequestException("Email already in use");
+        }
+
+        AdminUser newUser = AdminUser.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .role(request.getRole())
+                .build();
+
+        adminUserRepository.save(newUser);
+
+        UserDetails userDetails = userDetailsService.loadUserByUsername(newUser.getEmail());
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = jwtService.generateRefreshToken(userDetails);
+
+        LoginResponse response = LoginResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .email(newUser.getEmail())
+                .name(newUser.getName())
+                .role(newUser.getRole().name())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {

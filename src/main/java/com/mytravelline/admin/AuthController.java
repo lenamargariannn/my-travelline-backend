@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,7 +33,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/signup")
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<LoginResponse> signup(@Valid @RequestBody SignupRequest request) {
         if (adminUserRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");

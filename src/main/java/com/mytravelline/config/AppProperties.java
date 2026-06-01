@@ -36,6 +36,7 @@ public class AppProperties {
     public static class S3 {
         private String bucket;
         private String region = "us-east-1";
+        private String cdnUrl;
     }
 
     @Getter

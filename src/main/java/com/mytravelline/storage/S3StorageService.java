@@ -47,7 +47,12 @@ public class S3StorageService {
         }
     }
 
-    public String getPresignedUrl(String key) {
+    public String getImageUrl(String key) {
+        String cdnUrl = appProperties.getS3().getCdnUrl();
+        if (cdnUrl != null && !cdnUrl.isBlank()) {
+            return cdnUrl.stripTrailing() + "/" + key;
+        }
+        // local dev fallback — presigned URL (expires in 1 hour)
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(appProperties.getS3().getBucket())
                 .key(key)

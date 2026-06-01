@@ -52,6 +52,7 @@ app:
   s3:
     bucket: ${MEDIA_BUCKET:mytravelline-media-dev}
     region: ${AWS_REGION:us-east-1}
+    cdn-url: ${CDN_URL:}
   ses:
     from-email: ${SES_FROM_EMAIL:noreply@mytravelline.com}
     region: ${AWS_REGION:us-east-1}

@@ -50,7 +50,7 @@ public class GalleryService {
         return GalleryImageDto.builder()
                 .id(image.getId())
                 .s3Key(image.getS3Key())
-                .imageUrl(s3StorageService.getPresignedUrl(image.getS3Key()))
+                .imageUrl(s3StorageService.getImageUrl(image.getS3Key()))
                 .caption(image.getCaption())
                 .sortOrder(image.getSortOrder())
                 .destinationId(image.getDestination() != null ? image.getDestination().getId() : null)

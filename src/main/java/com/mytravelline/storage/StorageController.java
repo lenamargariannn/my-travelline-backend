@@ -24,7 +24,7 @@ public class StorageController {
             @RequestParam(value = "folder", defaultValue = "uploads") String folder) {
 
         String key = s3StorageService.uploadFile(file, folder);
-        String url = s3StorageService.getPresignedUrl(key);
+        String url = s3StorageService.getImageUrl(key);
 
         return ResponseEntity.ok(Map.of(
                 "key", key,

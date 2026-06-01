@@ -33,4 +33,6 @@ public interface TourRepository extends JpaRepository<Tour, Long> {
     Page<Tour> searchPublishedTours(@Param("search") String search, Pageable pageable);
 
     boolean existsBySlug(String slug);
+
+    boolean existsBySlugAndIdNot(String slug, Long id);
 }

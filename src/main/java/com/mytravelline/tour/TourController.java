@@ -5,6 +5,7 @@ import com.mytravelline.tour.dto.CreateTourRequest;
 import com.mytravelline.tour.dto.TourDto;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
+import com.mytravelline.tour.dto.UpdateTourRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -80,6 +82,13 @@ public class TourController {
     @PostMapping("/api/admin/tours")
     public ResponseEntity<TourDto> createTour(@Valid @RequestBody CreateTourRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(tourService.createTour(request));
+    }
+
+    @PutMapping("/api/admin/tours/{id}")
+    public ResponseEntity<TourDto> updateTour(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateTourRequest request) {
+        return ResponseEntity.ok(tourService.updateTour(id, request));
     }
 
     @PatchMapping("/api/admin/tours/{id}/status")

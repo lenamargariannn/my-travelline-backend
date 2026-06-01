@@ -10,6 +10,7 @@ import com.mytravelline.destination.DestinationRepository;
 import com.mytravelline.storage.S3StorageService;
 import com.mytravelline.tour.dto.CreateTourRequest;
 import com.mytravelline.tour.dto.TourDto;
+import com.mytravelline.tour.dto.UpdateTourRequest;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourItineraryDayDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
@@ -134,6 +135,58 @@ public class TourService {
 
         Tour saved = tourRepository.save(tour);
         return toFullDto(saved);
+    }
+
+    @Transactional
+    public TourDto updateTour(Long id, UpdateTourRequest request) {
+        Tour tour = tourRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", id));
+
+        if (!tour.getSlug().equals(request.getSlug()) &&
+                tourRepository.existsBySlugAndIdNot(request.getSlug(), id)) {
+            throw new BadRequestException("Tour with slug '" + request.getSlug() + "' already exists");
+        }
+
+        tour.setTitle(request.getTitle());
+        tour.setSlug(request.getSlug());
+        tour.setSummary(request.getSummary());
+        tour.setDescription(request.getDescription());
+        tour.setPrice(request.getPrice());
+        tour.setDurationDays(request.getDurationDays());
+        tour.setMaxGroupSize(request.getMaxGroupSize());
+        tour.setCoverImage(request.getCoverImage());
+        tour.setFeatured(request.isFeatured());
+
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.getCategoryId()));
+            tour.setCategory(category);
+        } else {
+            tour.setCategory(null);
+        }
+
+        if (request.getDestinationId() != null) {
+            Destination destination = destinationRepository.findById(request.getDestinationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Destination", "id", request.getDestinationId()));
+            tour.setDestination(destination);
+        } else {
+            tour.setDestination(null);
+        }
+
+        if (request.getItineraryDays() != null) {
+            tour.getItineraryDays().clear();
+            request.getItineraryDays().forEach(dayDto -> {
+                TourItineraryDay day = TourItineraryDay.builder()
+                        .dayNumber(dayDto.getDayNumber())
+                        .title(dayDto.getTitle())
+                        .description(dayDto.getDescription())
+                        .tour(tour)
+                        .build();
+                tour.getItineraryDays().add(day);
+            });
+        }
+
+        return toFullDto(tourRepository.save(tour));
     }
 
     @Transactional

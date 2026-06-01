@@ -10,20 +10,22 @@ Spring Boot 3.5.14 REST API for a travel agency platform (My TravelLine). Serves
 
 ```bash
 # Build
-./mvnw clean package
+mvn clean package
 
 # Run (dev profile active by default in IDE; set profile explicitly otherwise)
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # Run tests
-./mvnw test
+mvn test
 
 # Run a single test class
-./mvnw test -Dtest=BookingServiceTest
+mvn test -Dtest=BookingServiceTest
 
 # Skip tests during build
-./mvnw clean package -DskipTests
+mvn clean package -DskipTests
 ```
+
+Use `mvn`, not `./mvnw` — the wrapper does not exist in this repo.
 
 API docs available at `http://localhost:8080/swagger-ui.html` when running.
 
@@ -35,8 +37,8 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 | Package | Responsibility |
 |---|---|
-| `admin` | `AdminUser` entity, `AuthController` (login/refresh), `AdminDashboardController`, `AdminRole` enum |
-| `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `dto/` sub-package for request/response types |
+| `admin` | `AdminUser` entity, `AuthController` (login/refresh/signup), `AdminDashboardController`, `AdminRole` enum |
+| `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `dto/` sub-package for request/response types |
 | `booking` | Customer bookings linked to tours; `BookingStatus` enum |
 | `category` | Tour categories with slugs |
 | `destination` | Travel destinations with slugs |
@@ -45,7 +47,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `gallery` | Gallery images stored in S3 |
 | `contact` | Contact form submissions; tracked as read/unread |
 | `security` | `JwtService`, `JwtAuthenticationFilter`, `AdminUserDetailsService` |
-| `config` | `AppProperties` (typed config), `SecurityConfig`, `CorsConfig`, `OpenApiConfig`, `S3Config` |
+| `config` | `AppProperties` (typed config), `SecurityConfig`, `CorsConfig`, `OpenApiConfig`, `S3Config`, `StartupLogger` |
 | `common` | `BaseEntity`, `GlobalExceptionHandler`, `ApiError`, `PageResponse`, shared exceptions |
 | `storage` | `S3StorageService`, `StorageController` |
 
@@ -54,16 +56,35 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - **MapStruct** is used for DTO↔entity mapping (see `CategoryMapper`, `DestinationMapper`). MapStruct processors run at compile time; annotation processor order matters: Lombok → MapStruct (configured in `pom.xml`).
 - **`BaseEntity`** provides `id`, `createdAt`, `updatedAt` to all entities.
 - **`AppProperties`** (`app.*` in `application.yml`) is the single typed config holder for JWT, CORS, S3, and SES settings — prefer injecting this over `@Value`.
-- **`GlobalExceptionHandler`** returns `ApiError` for all exceptions. `ResourceNotFoundException` → 404, `BadRequestException` → 400.
+- **`GlobalExceptionHandler`** returns `ApiError` for all exceptions. Logging levels: `warn` for 4xx (validation, not found, bad request, bad credentials, access denied); `error` for unhandled 5xx. `ResourceNotFoundException` → 404, `BadRequestException` → 400.
 - **`PageResponse<T>`** wraps paginated list responses.
-- Images (tour images, gallery) are stored as S3 keys, not URLs; the `S3StorageService` handles presigning.
+- Images (tour images, gallery) are stored as S3 keys, not URLs; the `S3StorageService` handles presigning. Tour images are stored under `tours/{tourId}/` in S3.
+- **`StartupLogger`** fires on `ApplicationReadyEvent` and logs all environment variables (sensitive keys masked with `***`) and the resolved CORS configuration. Useful for diagnosing misconfigured origins in ECS.
 
 ### Security
 
-- JWT-based. `JwtAuthenticationFilter` validates tokens on every request.
+- JWT-based. `JwtAuthenticationFilter` validates tokens on every request; logs a `warn` for invalid/expired tokens.
 - Admin endpoints require authentication; public browsing endpoints are open.
-- `AdminUser` has a `role` field (`AdminRole` enum) for role-based access control.
+- `AdminUser` has a `role` field (`AdminRole` enum: `ADMIN`, `EDITOR`) for role-based access control.
+- Signup (`POST /api/admin/auth/signup`) is protected with `@PreAuthorize("hasRole('ADMIN')")` — only existing admins can create new users.
 - Default seed admin: `admin@mytravelline.com` / `Admin@123` (change in production — see `V2__seed_data.sql`).
+
+### CORS
+
+- Handled by a standalone `CorsFilter` bean in `CorsConfig` registered at `Ordered.HIGHEST_PRECEDENCE` — runs **before** Spring Security's filter chain entirely.
+- Spring Security's internal CORS support is disabled (`.cors(AbstractHttpConfigurer::disable)`) to avoid duplicate headers.
+- Allowed origins come from the `ALLOWED_ORIGINS` env var (comma-separated, whitespace-trimmed). Supports multiple origins: `https://admin.my-travelline.com,https://other.com`.
+- OPTIONS preflight requests return **204** and bypass the rest of the filter chain.
+- Allowed methods: `GET POST PUT PATCH DELETE OPTIONS`. Allowed headers: `Content-Type Authorization`. Credentials: `true`. Max-age: 3600 s. Path: `/**`.
+- If a deployed instance returns 0 CORS headers, the first thing to check is whether `ALLOWED_ORIGINS` is set correctly in the ECS task definition — an unrecognised origin deliberately returns no headers by spec.
+
+### Tour images
+
+- `Tour.coverImage` (S3 key) is the main/cover image — shown in listings and as the hero.
+- `TourImage` rows are the gallery images for a tour, ordered by `sortOrder`.
+- `POST /api/admin/tours/{id}/images` uploads a file to `tours/{id}/` in S3 and creates a `TourImage` row. Pass `main=true` to also set `tour.coverImage`.
+- `DELETE /api/admin/tours/{tourId}/images/{imageId}` deletes from S3 and DB; clears `tour.coverImage` automatically if the deleted image was the main one.
+- `TourImageDto` includes `url` (presigned S3 URL) and `main` (true if `s3Key` matches `tour.coverImage`).
 
 ### Database
 
@@ -75,11 +96,12 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 | Variable | Default | Purpose |
 |---|---|---|
+| `SERVER_ADDRESS` | `localhost` | Bind address — **must be `0.0.0.0` in ECS** or the app is unreachable from the ALB |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/mytravelline` | Database |
 | `DB_USER` | `mytravelline` | Database user |
 | `DB_PASSWORD` | `localpassword` | Database password |
 | `JWT_SECRET` | (dev default) | Must be ≥256 bits for HS256 |
-| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS |
+| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS — comma-separated, no spaces required but trimmed |
 | `MEDIA_BUCKET` | `mytravelline-media-dev` | S3 bucket |
 | `AWS_REGION` | `us-east-1` | AWS region for S3 and SES |
 | `SES_FROM_EMAIL` | `noreply@mytravelline.com` | SES sender address |
@@ -88,22 +110,21 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 Backend CI/CD uses GitHub Actions.
 
-**Workflow file:** `.github/workflows/build-and-push-ecr.yml`
+**Workflow file:** `.github/workflows/ci-cd.yml`
 
-**Trigger:** push to `main` branch only.
+**Trigger:** push to any branch; ECR push and ECS deployment only on `main`.
 
 ### What the workflow does
 
 1. Checks out the repository.
 2. Sets up Java 25.
-3. Builds the Spring Boot fat JAR: `mvn clean package -DskipTests -B`.
+3. Runs `mvn clean verify -B` with a real PostgreSQL service container (Testcontainers-compatible).
 4. Authenticates to AWS via GitHub OIDC (no long-lived credentials — `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` must not be used).
 5. Logs in to Amazon ECR.
-6. Builds and pushes a Docker image with two tags:
-   - `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend:latest`
-   - `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend:${GITHUB_SHA}`
+6. Builds and pushes a Docker image with two tags: `latest` and `${GITHUB_SHA}`.
+7. Runs `aws ecs update-service --force-new-deployment` to deploy the new image.
 
-> ECS deployment is **not** part of this workflow. Do not add it unless explicitly requested.
+> ECS deployment runs on every push to `main`. Do not gate it further unless explicitly requested.
 
 ### Required permissions
 
@@ -119,9 +140,11 @@ permissions:
 |---|---|
 | AWS region | `eu-north-1` |
 | AWS account ID | `947927347939` |
-| ECR repository | `my-travelline-backend` |
-| ECR image URI | `947927347939.dkr.ecr.eu-north-1.amazonaws.com/my-travelline-backend` |
-| GitHub Actions IAM role | `arn:aws:iam::947927347939:role/github-actions-my-travelline-backend-prod` |
+| ECR repository | `mytravelline-backend` |
+| ECR image URI | `947927347939.dkr.ecr.eu-north-1.amazonaws.com/mytravelline-backend` |
+| ECS cluster | `mytravelline-prod` |
+| ECS service | `my-travelline-backend-service` |
+| GitHub Actions IAM role | `arn:aws:iam::947927347939:role/github-actions-mytravelline-backend-prod` |
 
 ### Official actions
 
@@ -137,6 +160,5 @@ permissions:
 This backend works together with the frontend project located at:
 
 ```text
-
 ~/WebstormProjects/my-travelline-frontend
 ```

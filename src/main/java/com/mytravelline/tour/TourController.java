@@ -3,6 +3,7 @@ package com.mytravelline.tour;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.tour.dto.CreateTourRequest;
 import com.mytravelline.tour.dto.TourDto;
+import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -86,6 +88,25 @@ public class TourController {
             @RequestBody Map<String, String> body) {
         TourStatus status = TourStatus.valueOf(body.get("status").toUpperCase());
         return ResponseEntity.ok(tourService.updateTourStatus(id, status));
+    }
+
+    @PostMapping(value = "/api/admin/tours/{id}/images", consumes = "multipart/form-data")
+    public ResponseEntity<TourImageDto> uploadTourImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String caption,
+            @RequestParam(defaultValue = "0") Integer sortOrder,
+            @RequestParam(defaultValue = "false") boolean main) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(tourService.uploadTourImage(id, file, caption, sortOrder, main));
+    }
+
+    @DeleteMapping("/api/admin/tours/{tourId}/images/{imageId}")
+    public ResponseEntity<Void> deleteTourImage(
+            @PathVariable Long tourId,
+            @PathVariable Long imageId) {
+        tourService.deleteTourImage(tourId, imageId);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/api/admin/tours/{id}")

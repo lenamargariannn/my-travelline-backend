@@ -7,29 +7,35 @@ import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.common.exception.ResourceNotFoundException;
 import com.mytravelline.destination.Destination;
 import com.mytravelline.destination.DestinationRepository;
+import com.mytravelline.storage.S3StorageService;
 import com.mytravelline.tour.dto.CreateTourRequest;
 import com.mytravelline.tour.dto.TourDto;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourItineraryDayDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class TourService {
 
     private final TourRepository tourRepository;
+    private final TourImageRepository tourImageRepository;
     private final CategoryRepository categoryRepository;
     private final DestinationRepository destinationRepository;
+    private final S3StorageService s3StorageService;
 
     // ===== Public methods =====
 
@@ -146,6 +152,59 @@ public class TourService {
         tourRepository.deleteById(id);
     }
 
+    @Transactional
+    public TourImageDto uploadTourImage(Long tourId, MultipartFile file, String caption, Integer sortOrder, boolean main) {
+        Tour tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", tourId));
+
+        String s3Key = s3StorageService.uploadFile(file, "tours/" + tourId);
+
+        TourImage image = TourImage.builder()
+                .s3Key(s3Key)
+                .caption(caption)
+                .sortOrder(sortOrder != null ? sortOrder : 0)
+                .tour(tour)
+                .build();
+
+        TourImage saved = tourImageRepository.save(image);
+
+        if (main) {
+            tour.setCoverImage(s3Key);
+            tourRepository.save(tour);
+        }
+
+        log.info("Tour image uploaded: tourId={}, imageId={}, main={}, key={}", tourId, saved.getId(), main, s3Key);
+
+        return TourImageDto.builder()
+                .id(saved.getId())
+                .s3Key(s3Key)
+                .url(s3StorageService.getPresignedUrl(s3Key))
+                .caption(caption)
+                .sortOrder(saved.getSortOrder())
+                .main(main)
+                .build();
+    }
+
+    @Transactional
+    public void deleteTourImage(Long tourId, Long imageId) {
+        Tour tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", tourId));
+
+        TourImage image = tourImageRepository.findByIdAndTourId(imageId, tourId)
+                .orElseThrow(() -> new ResourceNotFoundException("TourImage", "id", imageId));
+
+        boolean wasMain = image.getS3Key().equals(tour.getCoverImage());
+        if (wasMain) {
+            tour.setCoverImage(null);
+            tourRepository.save(tour);
+        }
+
+        s3StorageService.deleteFile(image.getS3Key());
+        tourImageRepository.delete(image);
+
+        log.info("Tour image deleted: tourId={}, imageId={}, wasMain={}", tourId, imageId, wasMain);
+    }
+
     // ===== Mapping helpers =====
 
     private TourSummaryDto toSummaryDto(Tour tour) {
@@ -183,8 +242,10 @@ public class TourService {
                 .images(tour.getImages().stream().map(img -> TourImageDto.builder()
                         .id(img.getId())
                         .s3Key(img.getS3Key())
+                        .url(s3StorageService.getPresignedUrl(img.getS3Key()))
                         .caption(img.getCaption())
                         .sortOrder(img.getSortOrder())
+                        .main(img.getS3Key().equals(tour.getCoverImage()))
                         .build()).toList())
                 .itineraryDays(tour.getItineraryDays().stream().map(day -> TourItineraryDayDto.builder()
                         .id(day.getId())

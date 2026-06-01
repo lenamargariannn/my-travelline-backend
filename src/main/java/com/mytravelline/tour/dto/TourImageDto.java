@@ -15,6 +15,8 @@ public class TourImageDto {
 
     private Long id;
     private String s3Key;
+    private String url;
     private String caption;
     private Integer sortOrder;
+    private boolean main;
 }

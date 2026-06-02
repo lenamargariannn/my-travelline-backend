@@ -1,6 +1,5 @@
 package com.mytravelline.admin;
 
-import com.mytravelline.admin.dto.AdminUserDto;
 import com.mytravelline.admin.dto.LoginRequest;
 import com.mytravelline.admin.dto.LoginResponse;
 import com.mytravelline.admin.dto.SignupRequest;
@@ -13,8 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,8 +21,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -38,26 +33,6 @@ public class AuthController {
     private final JwtService jwtService;
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @GetMapping("/users")
-//    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<AdminUserDto>> getUsers(
-            @RequestParam(required = false, defaultValue = "") String email) {
-        List<AdminUserDto> users = adminUserRepository
-                .findByEmailContainingIgnoreCaseOrderByCreatedAtDesc(email)
-                .stream()
-                .map(u -> AdminUserDto.builder()
-                        .id(u.getId())
-                        .email(u.getEmail())
-                        .name(u.getName())
-                        .role(u.getRole())
-                        .active(u.isActive())
-                        .createdAt(u.getCreatedAt())
-                        .updatedAt(u.getUpdatedAt())
-                        .build())
-                .toList();
-        return ResponseEntity.ok(users);
-    }
 
     @PostMapping("/signup")
     @PreAuthorize("hasRole('ADMIN')")

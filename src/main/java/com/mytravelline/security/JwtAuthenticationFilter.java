@@ -39,9 +39,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/bookings", "/api/contact"
     );
 
+    private static final List<String> PUBLIC_POST_AUTH_PATTERNS = List.of(
+            "/api/admin/auth/login", "/api/admin/auth/refresh"
+    );
+
     private static final List<String> PUBLIC_ANY_PATTERNS = List.of(
-            "/api/admin/auth/**", "/actuator/**",
-            "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
+            "/actuator/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
     );
 
     @Override
@@ -56,6 +59,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (HttpMethod.POST.name().equals(method) &&
                 PUBLIC_POST_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, path))) return true;
+
+        if (HttpMethod.POST.name().equals(method) &&
+                PUBLIC_POST_AUTH_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, path))) return true;
 
         return PUBLIC_ANY_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, path));
     }

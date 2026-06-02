@@ -46,7 +46,8 @@ public class JwtService {
 
     @SuppressWarnings("unchecked")
     public List<String> extractRoles(String token) {
-        return extractClaim(token, claims -> (List<String>) claims.get("roles"));
+        List<String> roles = extractClaim(token, claims -> (List<String>) claims.get("roles"));
+        return roles != null ? roles : List.of();
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {

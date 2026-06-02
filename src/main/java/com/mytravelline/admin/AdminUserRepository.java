@@ -14,4 +14,6 @@ public interface AdminUserRepository extends JpaRepository<AdminUser, Long> {
     boolean existsByEmail(String email);
 
     List<AdminUser> findByEmailContainingIgnoreCaseOrderByCreatedAtDesc(String email);
+
+    void deleteByEmail(String email);
 }

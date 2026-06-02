@@ -34,6 +34,8 @@ public class UpdateTourRequest {
     @DecimalMin(value = "0.01", message = "Price must be greater than 0")
     private BigDecimal price;
 
+    private String currency = "USD";
+
     @Min(value = 1, message = "Duration must be at least 1 day")
     private Integer durationDays;
 

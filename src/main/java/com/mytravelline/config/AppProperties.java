@@ -5,6 +5,9 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @ConfigurationProperties(prefix = "app")
@@ -16,6 +19,7 @@ public class AppProperties {
     private Cors cors = new Cors();
     private S3 s3 = new S3();
     private Ses ses = new Ses();
+    private Map<String, BigDecimal> exchangeRates = new HashMap<>();
 
     @Getter
     @Setter

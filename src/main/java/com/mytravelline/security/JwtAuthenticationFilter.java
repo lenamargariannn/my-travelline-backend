@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final List<String> PUBLIC_GET_PATTERNS = List.of(
             "/api/tours/**", "/api/categories/**", "/api/destinations/**",
-            "/api/blog/**", "/api/gallery/**", "/api/reviews/**", "/healthz"
+            "/api/blog/**", "/api/gallery/**", "/api/reviews/**", "/api/currencies", "/healthz"
     );
 
     private static final List<String> PUBLIC_POST_PATTERNS = List.of(

@@ -20,6 +20,9 @@ public class TourSummaryDto {
     private String title;
     private String summary;
     private BigDecimal price;
+    private String currency;
+    private BigDecimal convertedPrice;
+    private String convertedCurrency;
     private Integer durationDays;
     private String coverImage;
     private boolean featured;

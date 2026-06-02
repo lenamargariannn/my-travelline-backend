@@ -38,31 +38,35 @@ public class TourController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String destination,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String currency) {
 
         PageResponse<TourSummaryDto> response;
 
         if (search != null && !search.isBlank()) {
-            response = tourService.searchTours(search, page, size);
+            response = tourService.searchTours(search, page, size, currency);
         } else if (category != null && !category.isBlank()) {
-            response = tourService.getToursByCategory(category, page, size);
+            response = tourService.getToursByCategory(category, page, size, currency);
         } else if (destination != null && !destination.isBlank()) {
-            response = tourService.getToursByDestination(destination, page, size);
+            response = tourService.getToursByDestination(destination, page, size, currency);
         } else {
-            response = tourService.getPublishedTours(page, size);
+            response = tourService.getPublishedTours(page, size, currency);
         }
 
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/api/tours/featured")
-    public ResponseEntity<List<TourSummaryDto>> getFeaturedTours() {
-        return ResponseEntity.ok(tourService.getFeaturedTours());
+    public ResponseEntity<List<TourSummaryDto>> getFeaturedTours(
+            @RequestParam(required = false) String currency) {
+        return ResponseEntity.ok(tourService.getFeaturedTours(currency));
     }
 
     @GetMapping("/api/tours/{slug}")
-    public ResponseEntity<TourDto> getTourBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(tourService.getTourBySlug(slug));
+    public ResponseEntity<TourDto> getTourBySlug(
+            @PathVariable String slug,
+            @RequestParam(required = false) String currency) {
+        return ResponseEntity.ok(tourService.getTourBySlug(slug, currency));
     }
 
     // ===== Admin endpoints =====

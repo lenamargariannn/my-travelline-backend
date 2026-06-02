@@ -86,6 +86,17 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - `DELETE /api/admin/tours/{tourId}/images/{imageId}` deletes from S3 and DB; clears `tour.coverImage` automatically if the deleted image was the main one.
 - `TourImageDto` includes `url` (presigned S3 URL) and `main` (true if `s3Key` matches `tour.coverImage`).
 
+### Multi-currency
+
+- All tour prices are stored in **USD** in the DB. The `tour.currency` column is always `'USD'`; it documents the storage currency and must not be set to anything else.
+- On-the-fly conversion is triggered by `?currency=EUR` (or any supported code) on `GET /api/tours`, `GET /api/tours/{slug}`, `GET /api/tours/featured`.
+- Response includes `price` (USD), `currency` (`"USD"`), `convertedPrice` (nullable), `convertedCurrency` (nullable — only set when conversion is requested).
+- Conversion uses in-memory rates seeded from `EXCHANGE_RATE_*` env vars at startup. Rates survive the process lifetime only; restart reloads from env vars. Rates can be updated at runtime via `PUT /api/admin/currencies/rates/{code}`.
+- Supported currencies: `USD EUR GBP AMD JPY AED` (defined in `CurrencyCode` enum). Requesting an unsupported code returns **400** with the list of supported codes in the error message.
+- `GET /api/currencies` — public, returns all supported codes with symbols and current rates.
+- `GET /api/admin/currencies/rates` — ADMIN only, returns raw rates map.
+- `PUT /api/admin/currencies/rates/{code}` — ADMIN only, body `{"rate": 0.95}`, updates in-memory only.
+
 ### Database
 
 - Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`.
@@ -105,6 +116,11 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `MEDIA_BUCKET` | `mytravelline-media-dev` | S3 bucket |
 | `AWS_REGION` | `us-east-1` | AWS region for S3 and SES |
 | `SES_FROM_EMAIL` | `noreply@mytravelline.com` | SES sender address |
+| `EXCHANGE_RATE_EUR` | `0.92` | 1 USD → EUR rate (in-memory, overrideable via admin API) |
+| `EXCHANGE_RATE_GBP` | `0.79` | 1 USD → GBP rate |
+| `EXCHANGE_RATE_AMD` | `388.0` | 1 USD → AMD rate |
+| `EXCHANGE_RATE_JPY` | `149.0` | 1 USD → JPY rate |
+| `EXCHANGE_RATE_AED` | `3.67` | 1 USD → AED rate |
 
 ## CI/CD
 

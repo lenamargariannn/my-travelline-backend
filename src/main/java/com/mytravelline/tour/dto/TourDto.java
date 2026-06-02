@@ -23,6 +23,9 @@ public class TourDto {
     private String summary;
     private String description;
     private BigDecimal price;
+    private String currency;
+    private BigDecimal convertedPrice;
+    private String convertedCurrency;
     private Integer durationDays;
     private Integer maxGroupSize;
     private String coverImage;

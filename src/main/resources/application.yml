@@ -56,6 +56,12 @@ app:
   ses:
     from-email: ${SES_FROM_EMAIL:noreply@mytravelline.com}
     region: ${AWS_REGION:us-east-1}
+  exchange-rates:
+    EUR: ${EXCHANGE_RATE_EUR:0.92}
+    GBP: ${EXCHANGE_RATE_GBP:0.79}
+    AMD: ${EXCHANGE_RATE_AMD:388.0}
+    JPY: ${EXCHANGE_RATE_JPY:149.0}
+    AED: ${EXCHANGE_RATE_AED:3.67}
 
 # Actuator
 management:

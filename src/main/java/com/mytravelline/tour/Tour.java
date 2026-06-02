@@ -48,6 +48,10 @@ public class Tour extends BaseEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(nullable = false, length = 3)
+    @Builder.Default
+    private String currency = "USD";
+
     @Column(name = "duration_days")
     private Integer durationDays;
 

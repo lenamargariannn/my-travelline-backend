@@ -5,6 +5,7 @@ import com.mytravelline.category.CategoryRepository;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.common.exception.ResourceNotFoundException;
+import com.mytravelline.currency.CurrencyService;
 import com.mytravelline.destination.Destination;
 import com.mytravelline.destination.DestinationRepository;
 import com.mytravelline.storage.S3StorageService;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -37,43 +39,44 @@ public class TourService {
     private final CategoryRepository categoryRepository;
     private final DestinationRepository destinationRepository;
     private final S3StorageService s3StorageService;
+    private final CurrencyService currencyService;
 
     // ===== Public methods =====
 
-    public PageResponse<TourSummaryDto> getPublishedTours(int page, int size) {
+    public PageResponse<TourSummaryDto> getPublishedTours(int page, int size, String currency) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedTours(pageable);
-        return toPageResponse(tours);
+        return toPageResponse(tours, currency);
     }
 
-    public List<TourSummaryDto> getFeaturedTours() {
+    public List<TourSummaryDto> getFeaturedTours(String currency) {
         return tourRepository.findFeaturedTours().stream()
-                .map(this::toSummaryDto)
+                .map(t -> toSummaryDto(t, currency))
                 .toList();
     }
 
-    public TourDto getTourBySlug(String slug) {
+    public TourDto getTourBySlug(String slug, String currency) {
         Tour tour = tourRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "slug", slug));
-        return toFullDto(tour);
+        return toFullDto(tour, currency);
     }
 
-    public PageResponse<TourSummaryDto> getToursByCategory(String categorySlug, int page, int size) {
+    public PageResponse<TourSummaryDto> getToursByCategory(String categorySlug, int page, int size, String currency) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedToursByCategory(categorySlug, pageable);
-        return toPageResponse(tours);
+        return toPageResponse(tours, currency);
     }
 
-    public PageResponse<TourSummaryDto> getToursByDestination(String destinationSlug, int page, int size) {
+    public PageResponse<TourSummaryDto> getToursByDestination(String destinationSlug, int page, int size, String currency) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedToursByDestination(destinationSlug, pageable);
-        return toPageResponse(tours);
+        return toPageResponse(tours, currency);
     }
 
-    public PageResponse<TourSummaryDto> searchTours(String query, int page, int size) {
+    public PageResponse<TourSummaryDto> searchTours(String query, int page, int size, String currency) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.searchPublishedTours(query, pageable);
-        return toPageResponse(tours);
+        return toPageResponse(tours, currency);
     }
 
     // ===== Admin methods =====
@@ -81,13 +84,13 @@ public class TourService {
     public PageResponse<TourSummaryDto> getAllTours(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findAll(pageable);
-        return toPageResponse(tours);
+        return toPageResponse(tours, null);
     }
 
     public TourDto getTourById(Long id) {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", id));
-        return toFullDto(tour);
+        return toFullDto(tour, null);
     }
 
     @Transactional
@@ -102,6 +105,7 @@ public class TourService {
                 .summary(request.getSummary())
                 .description(request.getDescription())
                 .price(request.getPrice())
+                .currency("USD")
                 .durationDays(request.getDurationDays())
                 .maxGroupSize(request.getMaxGroupSize())
                 .coverImage(request.getCoverImage())
@@ -134,7 +138,7 @@ public class TourService {
         }
 
         Tour saved = tourRepository.save(tour);
-        return toFullDto(saved);
+        return toFullDto(saved, null);
     }
 
     @Transactional
@@ -186,7 +190,7 @@ public class TourService {
             });
         }
 
-        return toFullDto(tourRepository.save(tour));
+        return toFullDto(tourRepository.save(tour), null);
     }
 
     @Transactional
@@ -194,7 +198,7 @@ public class TourService {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", id));
         tour.setStatus(status);
-        return toFullDto(tourRepository.save(tour));
+        return toFullDto(tourRepository.save(tour), null);
     }
 
     @Transactional
@@ -260,13 +264,17 @@ public class TourService {
 
     // ===== Mapping helpers =====
 
-    private TourSummaryDto toSummaryDto(Tour tour) {
+    private TourSummaryDto toSummaryDto(Tour tour, String targetCurrency) {
+        BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
         return TourSummaryDto.builder()
                 .id(tour.getId())
                 .slug(tour.getSlug())
                 .title(tour.getTitle())
                 .summary(tour.getSummary())
                 .price(tour.getPrice())
+                .currency(tour.getCurrency())
+                .convertedPrice(convertedPrice)
+                .convertedCurrency(convertedPrice != null ? targetCurrency.toUpperCase() : null)
                 .durationDays(tour.getDurationDays())
                 .coverImage(tour.getCoverImage())
                 .featured(tour.isFeatured())
@@ -275,7 +283,8 @@ public class TourService {
                 .build();
     }
 
-    private TourDto toFullDto(Tour tour) {
+    private TourDto toFullDto(Tour tour, String targetCurrency) {
+        BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
         return TourDto.builder()
                 .id(tour.getId())
                 .slug(tour.getSlug())
@@ -283,6 +292,9 @@ public class TourService {
                 .summary(tour.getSummary())
                 .description(tour.getDescription())
                 .price(tour.getPrice())
+                .currency(tour.getCurrency())
+                .convertedPrice(convertedPrice)
+                .convertedCurrency(convertedPrice != null ? targetCurrency.toUpperCase() : null)
                 .durationDays(tour.getDurationDays())
                 .maxGroupSize(tour.getMaxGroupSize())
                 .coverImage(tour.getCoverImage())
@@ -309,9 +321,15 @@ public class TourService {
                 .build();
     }
 
-    private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page) {
+    private BigDecimal resolveConvertedPrice(BigDecimal usdPrice, String targetCurrency) {
+        if (targetCurrency == null || "USD".equalsIgnoreCase(targetCurrency)) return null;
+        currencyService.validateCurrency(targetCurrency);
+        return currencyService.convert(usdPrice, targetCurrency.toUpperCase());
+    }
+
+    private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page, String currency) {
         List<TourSummaryDto> content = page.getContent().stream()
-                .map(this::toSummaryDto)
+                .map(t -> toSummaryDto(t, currency))
                 .toList();
         return PageResponse.of(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages(), page.isLast());

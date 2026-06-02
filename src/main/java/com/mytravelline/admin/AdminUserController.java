@@ -19,7 +19,7 @@ public class AdminUserController {
     private final AdminUserRepository adminUserRepository;
 
     @GetMapping
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AdminUserDto>> getUsers(
             @RequestParam(required = false, defaultValue = "") String email) {
         List<AdminUserDto> users = adminUserRepository

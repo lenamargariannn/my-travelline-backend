@@ -80,7 +80,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String jwt = authHeader.substring(7);
+        final String jwt = authHeader.substring(7).trim();
+
+        if (!jwt.contains(".")) {
+            log.warn("Malformed token on {} {} — not a JWT (no periods). Length={}, starts='{}'",
+                    request.getMethod(), request.getServletPath(),
+                    jwt.length(), jwt.length() > 10 ? jwt.substring(0, 10) + "…" : jwt);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
             final String userEmail = jwtService.extractUsername(jwt);

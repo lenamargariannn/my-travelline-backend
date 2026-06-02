@@ -23,6 +23,7 @@ class CurrencyServiceTest {
         rates.put("EUR", new BigDecimal("0.92"));
         rates.put("GBP", new BigDecimal("0.79"));
         rates.put("AMD", new BigDecimal("388.00"));
+        rates.put("RUB", new BigDecimal("90.00"));
         props.setExchangeRates(rates);
 
         currencyService = new CurrencyService(props);
@@ -115,7 +116,7 @@ class CurrencyServiceTest {
         var codes = currencyService.getSupportedCurrencies().stream()
                 .map(CurrencyInfo::getCode)
                 .toList();
-        assertThat(codes).contains("USD", "EUR", "GBP", "AMD");
+        assertThat(codes).contains("USD", "EUR", "GBP", "AMD", "RUB");
     }
 
     @Test

@@ -10,7 +10,7 @@ public enum CurrencyCode {
     EUR("€"),
     GBP("£"),
     AMD("֏"),
-    JPY("¥"),
+    RUB("₽"),
     AED("د.إ");
 
     private final String symbol;

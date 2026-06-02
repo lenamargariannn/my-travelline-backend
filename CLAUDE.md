@@ -92,7 +92,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - On-the-fly conversion is triggered by `?currency=EUR` (or any supported code) on `GET /api/tours`, `GET /api/tours/{slug}`, `GET /api/tours/featured`.
 - Response includes `price` (USD), `currency` (`"USD"`), `convertedPrice` (nullable), `convertedCurrency` (nullable — only set when conversion is requested).
 - Conversion uses in-memory rates seeded from `EXCHANGE_RATE_*` env vars at startup. Rates survive the process lifetime only; restart reloads from env vars. Rates can be updated at runtime via `PUT /api/admin/currencies/rates/{code}`.
-- Supported currencies: `USD EUR GBP AMD JPY AED` (defined in `CurrencyCode` enum). Requesting an unsupported code returns **400** with the list of supported codes in the error message.
+- Supported currencies: `USD EUR GBP AMD RUB AED` (defined in `CurrencyCode` enum). Requesting an unsupported code returns **400** with the list of supported codes in the error message.
 - `GET /api/currencies` — public, returns all supported codes with symbols and current rates.
 - `GET /api/admin/currencies/rates` — ADMIN only, returns raw rates map.
 - `PUT /api/admin/currencies/rates/{code}` — ADMIN only, body `{"rate": 0.95}`, updates in-memory only.
@@ -119,7 +119,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `EXCHANGE_RATE_EUR` | `0.92` | 1 USD → EUR rate (in-memory, overrideable via admin API) |
 | `EXCHANGE_RATE_GBP` | `0.79` | 1 USD → GBP rate |
 | `EXCHANGE_RATE_AMD` | `388.0` | 1 USD → AMD rate |
-| `EXCHANGE_RATE_JPY` | `149.0` | 1 USD → JPY rate |
+| `EXCHANGE_RATE_RUB` | `90.0` | 1 USD → RUB rate |
 | `EXCHANGE_RATE_AED` | `3.67` | 1 USD → AED rate |
 
 ## CI/CD

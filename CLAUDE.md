@@ -47,9 +47,10 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `review` | Customer reviews; require approval before surfacing |
 | `gallery` | Gallery images stored in S3 |
 | `contact` | Contact form submissions; tracked as read/unread |
+| `translation` | `Translation` entity, `TranslationRepository`, `TranslationService` (get/saveAll/deleteAll), `LocaleCode` enum (EN/HY/RU) |
 | `security` | `JwtService`, `JwtAuthenticationFilter`, `AdminUserDetailsService` |
 | `config` | `AppProperties` (typed config), `SecurityConfig`, `CorsConfig`, `OpenApiConfig`, `S3Config`, `StartupLogger` |
-| `common` | `BaseEntity`, `GlobalExceptionHandler`, `ApiError`, `PageResponse`, shared exceptions |
+| `common` | `BaseEntity`, `GlobalExceptionHandler`, `ApiError`, `PageResponse`, `LocaleResolver`, shared exceptions |
 | `storage` | `S3StorageService`, `StorageController` |
 
 ### Key patterns
@@ -87,6 +88,37 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - `DELETE /api/admin/tours/{tourId}/images/{imageId}` deletes from S3 and DB; clears `tour.coverImage` automatically if the deleted image was the main one.
 - `TourImageDto` includes `url` (CDN URL or presigned S3 URL, depending on `CDN_URL` env var) and `main` (true if `s3Key` matches `tour.coverImage`).
 
+### Multilingual / i18n
+
+Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian).
+
+**Storage** — single `translations` table: `(entity_type, entity_id, locale, field, value)` with a unique constraint on the four key columns. No locale columns are added to domain tables.
+
+**Translatable domains and their field keys:**
+
+| Domain | `entity_type` | Translated fields |
+|---|---|---|
+| Tour | `tour` | `name` (→ `title`), `description`, `itinerary_day_{dayNumber}_title`, `itinerary_day_{dayNumber}_description` |
+| Destination | `destination` | `name`, `description` |
+| Category | `category` | `name` |
+| Blog post | `blog` | `title`, `content`, `excerpt` (→ `summary`) |
+| Gallery image | `gallery` | `caption` |
+
+**Locale resolution** (`LocaleResolver`) — precedence:
+1. `?lang=hy` query param
+2. `Accept-Language` request header (first two-char tag only)
+3. Falls back to `EN`
+
+**Public API behaviour** — every public GET endpoint resolves the locale from the request and overlays translated values on top of base entity fields. Missing translations fall back to English silently.
+
+**Admin translation endpoints** (require `isAuthenticated()`):
+- `GET /api/admin/{domain}/{id}/translations` — returns `{ "en": {…}, "hy": {…}, "ru": {…} }` (only locales that have rows)
+- `PUT /api/admin/{domain}/{id}/translations` — same shape, partial updates are fine; missing keys are left unchanged
+
+**Cascade delete** — every domain delete method calls `translationService.deleteAll(entityType, id)` before deleting the entity, preventing orphan rows.
+
+**NOT translated:** Booking, Contact, Review, AdminUser, tour image filenames/S3 keys.
+
 ### Multi-currency
 
 - All tour prices are stored in **USD** in the DB. The `tour.currency` column is always `'USD'`; it documents the storage currency and must not be set to anything else.
@@ -100,9 +132,9 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 ### Database
 
-- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`.
+- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table).
 - `ddl-auto: validate` in all non-test profiles; Flyway owns the schema.
-- Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. Tests use Testcontainers for a real PostgreSQL instance.
+- Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. It connects directly to a local PostgreSQL at `localhost:5432/mytravelline_test` (user `test` / password `test`) — **not** Testcontainers. The CI workflow provides a PostgreSQL service container for this.
 
 ### Environment variables
 

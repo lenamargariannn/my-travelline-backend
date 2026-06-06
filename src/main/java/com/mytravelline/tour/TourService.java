@@ -2,6 +2,7 @@ package com.mytravelline.tour;
 
 import com.mytravelline.category.Category;
 import com.mytravelline.category.CategoryRepository;
+import com.mytravelline.common.LocaleResolver;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.common.exception.ResourceNotFoundException;
@@ -15,6 +16,9 @@ import com.mytravelline.tour.dto.UpdateTourRequest;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourItineraryDayDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
+import com.mytravelline.translation.LocaleCode;
+import com.mytravelline.translation.TranslationService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -34,49 +39,63 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class TourService {
 
+    private static final String ENTITY_TYPE = "tour";
+
     private final TourRepository tourRepository;
     private final TourImageRepository tourImageRepository;
     private final CategoryRepository categoryRepository;
     private final DestinationRepository destinationRepository;
     private final S3StorageService s3StorageService;
     private final CurrencyService currencyService;
+    private final TranslationService translationService;
+    private final LocaleResolver localeResolver;
 
     // ===== Public methods =====
 
-    public PageResponse<TourSummaryDto> getPublishedTours(int page, int size, String currency) {
+    public PageResponse<TourSummaryDto> getPublishedTours(int page, int size, String currency,
+                                                          HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedTours(pageable);
-        return toPageResponse(tours, currency);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toPageResponse(tours, currency, locale);
     }
 
-    public List<TourSummaryDto> getFeaturedTours(String currency) {
+    public List<TourSummaryDto> getFeaturedTours(String currency, HttpServletRequest request) {
+        LocaleCode locale = localeResolver.resolve(request);
         return tourRepository.findFeaturedTours().stream()
-                .map(t -> toSummaryDto(t, currency))
+                .map(t -> toSummaryDto(t, currency, locale))
                 .toList();
     }
 
-    public TourDto getTourBySlug(String slug, String currency) {
+    public TourDto getTourBySlug(String slug, String currency, HttpServletRequest request) {
         Tour tour = tourRepository.findBySlug(slug)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "slug", slug));
-        return toFullDto(tour, currency);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toFullDto(tour, currency, locale);
     }
 
-    public PageResponse<TourSummaryDto> getToursByCategory(String categorySlug, int page, int size, String currency) {
+    public PageResponse<TourSummaryDto> getToursByCategory(String categorySlug, int page, int size,
+                                                           String currency, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedToursByCategory(categorySlug, pageable);
-        return toPageResponse(tours, currency);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toPageResponse(tours, currency, locale);
     }
 
-    public PageResponse<TourSummaryDto> getToursByDestination(String destinationSlug, int page, int size, String currency) {
+    public PageResponse<TourSummaryDto> getToursByDestination(String destinationSlug, int page, int size,
+                                                              String currency, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findPublishedToursByDestination(destinationSlug, pageable);
-        return toPageResponse(tours, currency);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toPageResponse(tours, currency, locale);
     }
 
-    public PageResponse<TourSummaryDto> searchTours(String query, int page, int size, String currency) {
+    public PageResponse<TourSummaryDto> searchTours(String query, int page, int size,
+                                                     String currency, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.searchPublishedTours(query, pageable);
-        return toPageResponse(tours, currency);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toPageResponse(tours, currency, locale);
     }
 
     // ===== Admin methods =====
@@ -84,13 +103,28 @@ public class TourService {
     public PageResponse<TourSummaryDto> getAllTours(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findAll(pageable);
-        return toPageResponse(tours, null);
+        return toPageResponse(tours, null, LocaleCode.EN);
     }
 
     public TourDto getTourById(Long id) {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", id));
-        return toFullDto(tour, null);
+        return toFullDto(tour, null, LocaleCode.EN);
+    }
+
+    public Map<String, Map<String, String>> getTourTranslations(Long id) {
+        if (!tourRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Tour", "id", id);
+        }
+        return translationService.getAll(ENTITY_TYPE, id);
+    }
+
+    @Transactional
+    public void saveTourTranslations(Long id, Map<String, Map<String, String>> translations) {
+        if (!tourRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Tour", "id", id);
+        }
+        translationService.saveAll(ENTITY_TYPE, id, translations);
     }
 
     @Transactional
@@ -138,7 +172,7 @@ public class TourService {
         }
 
         Tour saved = tourRepository.save(tour);
-        return toFullDto(saved, null);
+        return toFullDto(saved, null, LocaleCode.EN);
     }
 
     @Transactional
@@ -190,7 +224,7 @@ public class TourService {
             });
         }
 
-        return toFullDto(tourRepository.save(tour), null);
+        return toFullDto(tourRepository.save(tour), null, LocaleCode.EN);
     }
 
     @Transactional
@@ -198,7 +232,7 @@ public class TourService {
         Tour tour = tourRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", id));
         tour.setStatus(status);
-        return toFullDto(tourRepository.save(tour), null);
+        return toFullDto(tourRepository.save(tour), null, LocaleCode.EN);
     }
 
     @Transactional
@@ -206,6 +240,7 @@ public class TourService {
         if (!tourRepository.existsById(id)) {
             throw new ResourceNotFoundException("Tour", "id", id);
         }
+        translationService.deleteAll(ENTITY_TYPE, id);
         tourRepository.deleteById(id);
     }
 
@@ -264,12 +299,19 @@ public class TourService {
 
     // ===== Mapping helpers =====
 
-    private TourSummaryDto toSummaryDto(Tour tour, String targetCurrency) {
+    private TourSummaryDto toSummaryDto(Tour tour, String targetCurrency, LocaleCode locale) {
         BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
+
+        String title = tour.getTitle();
+        if (locale != LocaleCode.EN) {
+            String translated = translationService.get(ENTITY_TYPE, tour.getId(), "name", locale);
+            if (translated != null) title = translated;
+        }
+
         return TourSummaryDto.builder()
                 .id(tour.getId())
                 .slug(tour.getSlug())
-                .title(tour.getTitle())
+                .title(title)
                 .summary(tour.getSummary())
                 .price(tour.getPrice())
                 .currency(tour.getCurrency())
@@ -283,14 +325,43 @@ public class TourService {
                 .build();
     }
 
-    private TourDto toFullDto(Tour tour, String targetCurrency) {
+    private TourDto toFullDto(Tour tour, String targetCurrency, LocaleCode locale) {
         BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
+
+        String title = tour.getTitle();
+        String description = tour.getDescription();
+        if (locale != LocaleCode.EN) {
+            String translatedName = translationService.get(ENTITY_TYPE, tour.getId(), "name", locale);
+            String translatedDesc = translationService.get(ENTITY_TYPE, tour.getId(), "description", locale);
+            if (translatedName != null) title = translatedName;
+            if (translatedDesc != null) description = translatedDesc;
+        }
+
+        List<TourItineraryDayDto> itineraryDays = tour.getItineraryDays().stream().map(day -> {
+            String dayTitle = day.getTitle();
+            String dayDesc = day.getDescription();
+            if (locale != LocaleCode.EN) {
+                String tTitle = translationService.get(ENTITY_TYPE, tour.getId(),
+                        "itinerary_day_" + day.getDayNumber() + "_title", locale);
+                String tDesc = translationService.get(ENTITY_TYPE, tour.getId(),
+                        "itinerary_day_" + day.getDayNumber() + "_description", locale);
+                if (tTitle != null) dayTitle = tTitle;
+                if (tDesc != null) dayDesc = tDesc;
+            }
+            return TourItineraryDayDto.builder()
+                    .id(day.getId())
+                    .dayNumber(day.getDayNumber())
+                    .title(dayTitle)
+                    .description(dayDesc)
+                    .build();
+        }).toList();
+
         return TourDto.builder()
                 .id(tour.getId())
                 .slug(tour.getSlug())
-                .title(tour.getTitle())
+                .title(title)
                 .summary(tour.getSummary())
-                .description(tour.getDescription())
+                .description(description)
                 .price(tour.getPrice())
                 .currency(tour.getCurrency())
                 .convertedPrice(convertedPrice)
@@ -312,12 +383,7 @@ public class TourService {
                         .sortOrder(img.getSortOrder())
                         .main(img.getS3Key().equals(tour.getCoverImage()))
                         .build()).toList())
-                .itineraryDays(tour.getItineraryDays().stream().map(day -> TourItineraryDayDto.builder()
-                        .id(day.getId())
-                        .dayNumber(day.getDayNumber())
-                        .title(day.getTitle())
-                        .description(day.getDescription())
-                        .build()).toList())
+                .itineraryDays(itineraryDays)
                 .build();
     }
 
@@ -327,9 +393,9 @@ public class TourService {
         return currencyService.convert(usdPrice, targetCurrency.toUpperCase());
     }
 
-    private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page, String currency) {
+    private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page, String currency, LocaleCode locale) {
         List<TourSummaryDto> content = page.getContent().stream()
-                .map(t -> toSummaryDto(t, currency))
+                .map(t -> toSummaryDto(t, currency, locale))
                 .toList();
         return PageResponse.of(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages(), page.isLast());

@@ -6,10 +6,12 @@ import com.mytravelline.tour.dto.TourDto;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
 import com.mytravelline.tour.dto.UpdateTourRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,18 +41,19 @@ public class TourController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String destination,
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) String currency) {
+            @RequestParam(required = false) String currency,
+            HttpServletRequest request) {
 
         PageResponse<TourSummaryDto> response;
 
         if (search != null && !search.isBlank()) {
-            response = tourService.searchTours(search, page, size, currency);
+            response = tourService.searchTours(search, page, size, currency, request);
         } else if (category != null && !category.isBlank()) {
-            response = tourService.getToursByCategory(category, page, size, currency);
+            response = tourService.getToursByCategory(category, page, size, currency, request);
         } else if (destination != null && !destination.isBlank()) {
-            response = tourService.getToursByDestination(destination, page, size, currency);
+            response = tourService.getToursByDestination(destination, page, size, currency, request);
         } else {
-            response = tourService.getPublishedTours(page, size, currency);
+            response = tourService.getPublishedTours(page, size, currency, request);
         }
 
         return ResponseEntity.ok(response);
@@ -58,15 +61,17 @@ public class TourController {
 
     @GetMapping("/api/tours/featured")
     public ResponseEntity<List<TourSummaryDto>> getFeaturedTours(
-            @RequestParam(required = false) String currency) {
-        return ResponseEntity.ok(tourService.getFeaturedTours(currency));
+            @RequestParam(required = false) String currency,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(tourService.getFeaturedTours(currency, request));
     }
 
     @GetMapping("/api/tours/{slug}")
     public ResponseEntity<TourDto> getTourBySlug(
             @PathVariable String slug,
-            @RequestParam(required = false) String currency) {
-        return ResponseEntity.ok(tourService.getTourBySlug(slug, currency));
+            @RequestParam(required = false) String currency,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(tourService.getTourBySlug(slug, currency, request));
     }
 
     // ===== Admin endpoints =====
@@ -81,6 +86,21 @@ public class TourController {
     @GetMapping("/api/admin/tours/{id}")
     public ResponseEntity<TourDto> getTourById(@PathVariable Long id) {
         return ResponseEntity.ok(tourService.getTourById(id));
+    }
+
+    @GetMapping("/api/admin/tours/{id}/translations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Map<String, String>>> getTourTranslations(@PathVariable Long id) {
+        return ResponseEntity.ok(tourService.getTourTranslations(id));
+    }
+
+    @PutMapping("/api/admin/tours/{id}/translations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> saveTourTranslations(
+            @PathVariable Long id,
+            @RequestBody Map<String, Map<String, String>> translations) {
+        tourService.saveTourTranslations(id, translations);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/api/admin/tours")

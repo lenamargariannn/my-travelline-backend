@@ -37,7 +37,8 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 | Package | Responsibility |
 |---|---|
-| `admin` | `AdminUser` entity, `AuthController` (login/refresh/signup), `AdminDashboardController`, `AdminRole` enum |
+| `admin` | `AdminUser` entity, `AdminUserRepository`, `AuthController` (login/refresh/signup), `AdminUserController` (user listing/deletion), `AdminDashboardController`, `AdminRole` enum; `dto/` sub-package |
+| `currency` | `CurrencyService` (in-memory rates, USD→X conversion), `CurrencyCode` enum, `CurrencyController` (public), `AdminCurrencyController` (admin), `CurrencyInfo` DTO |
 | `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `dto/` sub-package for request/response types |
 | `booking` | Customer bookings linked to tours; `BookingStatus` enum |
 | `category` | Tour categories with slugs |
@@ -58,7 +59,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - **`AppProperties`** (`app.*` in `application.yml`) is the single typed config holder for JWT, CORS, S3, and SES settings — prefer injecting this over `@Value`.
 - **`GlobalExceptionHandler`** returns `ApiError` for all exceptions. Logging levels: `warn` for 4xx (validation, not found, bad request, bad credentials, access denied); `error` for unhandled 5xx. `ResourceNotFoundException` → 404, `BadRequestException` → 400.
 - **`PageResponse<T>`** wraps paginated list responses.
-- Images (tour images, gallery) are stored as S3 keys, not URLs; the `S3StorageService` handles presigning. Tour images are stored under `tours/{tourId}/` in S3.
+- Images (tour images, gallery) are stored as S3 keys, not URLs. `S3StorageService.getImageUrl()` returns a CDN URL (`{CDN_URL}/{key}`) when the `CDN_URL` env var is set; falls back to a 1-hour presigned S3 URL for local dev. Tour images are stored under `tours/{tourId}/` in S3.
 - **`StartupLogger`** fires on `ApplicationReadyEvent` and logs all environment variables (sensitive keys masked with `***`) and the resolved CORS configuration. Useful for diagnosing misconfigured origins in ECS.
 
 ### Security
@@ -71,8 +72,8 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 
 ### CORS
 
-- Handled by a standalone `CorsFilter` bean in `CorsConfig` registered at `Ordered.HIGHEST_PRECEDENCE` — runs **before** Spring Security's filter chain entirely.
-- Spring Security's internal CORS support is disabled (`.cors(AbstractHttpConfigurer::disable)`) to avoid duplicate headers.
+- Handled by a standalone `CorsFilter` bean in `CorsConfig` registered at `Ordered.HIGHEST_PRECEDENCE` — runs **before** Spring Security's filter chain.
+- Spring Security's CORS is also wired to the same `CorsConfigurationSource` bean (`.cors(cors -> cors.configurationSource(corsConfigurationSource))`), ensuring consistent config across both layers.
 - Allowed origins come from the `ALLOWED_ORIGINS` env var (comma-separated, whitespace-trimmed). Supports multiple origins: `https://admin.my-travelline.com,https://other.com`.
 - OPTIONS preflight requests return **204** and bypass the rest of the filter chain.
 - Allowed methods: `GET POST PUT PATCH DELETE OPTIONS`. Allowed headers: `Content-Type Authorization`. Credentials: `true`. Max-age: 3600 s. Path: `/**`.
@@ -84,7 +85,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - `TourImage` rows are the gallery images for a tour, ordered by `sortOrder`.
 - `POST /api/admin/tours/{id}/images` uploads a file to `tours/{id}/` in S3 and creates a `TourImage` row. Pass `main=true` to also set `tour.coverImage`.
 - `DELETE /api/admin/tours/{tourId}/images/{imageId}` deletes from S3 and DB; clears `tour.coverImage` automatically if the deleted image was the main one.
-- `TourImageDto` includes `url` (presigned S3 URL) and `main` (true if `s3Key` matches `tour.coverImage`).
+- `TourImageDto` includes `url` (CDN URL or presigned S3 URL, depending on `CDN_URL` env var) and `main` (true if `s3Key` matches `tour.coverImage`).
 
 ### Multi-currency
 
@@ -108,12 +109,14 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | Variable | Default | Purpose |
 |---|---|---|
 | `SERVER_ADDRESS` | `localhost` | Bind address — **must be `0.0.0.0` in ECS** or the app is unreachable from the ALB |
+| `SERVER_PORT` | `8080` | HTTP port |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/mytravelline` | Database |
 | `DB_USER` | `mytravelline` | Database user |
 | `DB_PASSWORD` | `localpassword` | Database password |
 | `JWT_SECRET` | (dev default) | Must be ≥256 bits for HS256 |
-| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS — comma-separated, no spaces required but trimmed |
+| `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:5174` | CORS — comma-separated, no spaces required but trimmed |
 | `MEDIA_BUCKET` | `mytravelline-media-dev` | S3 bucket |
+| `CDN_URL` | *(empty)* | CloudFront base URL — when set, images are served as `{CDN_URL}/{s3Key}` instead of presigned URLs |
 | `AWS_REGION` | `us-east-1` | AWS region for S3 and SES |
 | `SES_FROM_EMAIL` | `noreply@mytravelline.com` | SES sender address |
 | `EXCHANGE_RATE_EUR` | `0.92` | 1 USD → EUR rate (in-memory, overrideable via admin API) |

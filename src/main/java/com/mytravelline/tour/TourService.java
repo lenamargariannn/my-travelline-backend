@@ -303,9 +303,19 @@ public class TourService {
         BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
 
         String title = tour.getTitle();
+        String categoryName = tour.getCategory() != null ? tour.getCategory().getName() : null;
+        String destinationName = tour.getDestination() != null ? tour.getDestination().getName() : null;
         if (locale != LocaleCode.EN) {
             String translated = translationService.get(ENTITY_TYPE, tour.getId(), "name", locale);
             if (translated != null) title = translated;
+            if (tour.getCategory() != null) {
+                String t = translationService.get("category", tour.getCategory().getId(), "name", locale);
+                if (t != null) categoryName = t;
+            }
+            if (tour.getDestination() != null) {
+                String t = translationService.get("destination", tour.getDestination().getId(), "name", locale);
+                if (t != null) destinationName = t;
+            }
         }
 
         return TourSummaryDto.builder()
@@ -320,8 +330,8 @@ public class TourService {
                 .durationDays(tour.getDurationDays())
                 .coverImage(tour.getCoverImage())
                 .featured(tour.isFeatured())
-                .categoryName(tour.getCategory() != null ? tour.getCategory().getName() : null)
-                .destinationName(tour.getDestination() != null ? tour.getDestination().getName() : null)
+                .categoryName(categoryName)
+                .destinationName(destinationName)
                 .build();
     }
 
@@ -330,11 +340,21 @@ public class TourService {
 
         String title = tour.getTitle();
         String description = tour.getDescription();
+        String categoryName = tour.getCategory() != null ? tour.getCategory().getName() : null;
+        String destinationName = tour.getDestination() != null ? tour.getDestination().getName() : null;
         if (locale != LocaleCode.EN) {
             String translatedName = translationService.get(ENTITY_TYPE, tour.getId(), "name", locale);
             String translatedDesc = translationService.get(ENTITY_TYPE, tour.getId(), "description", locale);
             if (translatedName != null) title = translatedName;
             if (translatedDesc != null) description = translatedDesc;
+            if (tour.getCategory() != null) {
+                String t = translationService.get("category", tour.getCategory().getId(), "name", locale);
+                if (t != null) categoryName = t;
+            }
+            if (tour.getDestination() != null) {
+                String t = translationService.get("destination", tour.getDestination().getId(), "name", locale);
+                if (t != null) destinationName = t;
+            }
         }
 
         List<TourItineraryDayDto> itineraryDays = tour.getItineraryDays().stream().map(day -> {
@@ -372,9 +392,9 @@ public class TourService {
                 .featured(tour.isFeatured())
                 .status(tour.getStatus())
                 .categoryId(tour.getCategory() != null ? tour.getCategory().getId() : null)
-                .categoryName(tour.getCategory() != null ? tour.getCategory().getName() : null)
+                .categoryName(categoryName)
                 .destinationId(tour.getDestination() != null ? tour.getDestination().getId() : null)
-                .destinationName(tour.getDestination() != null ? tour.getDestination().getName() : null)
+                .destinationName(destinationName)
                 .images(tour.getImages().stream().map(img -> TourImageDto.builder()
                         .id(img.getId())
                         .s3Key(img.getS3Key())

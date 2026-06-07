@@ -1,6 +1,6 @@
 package com.mytravelline.blog;
 
-import com.mytravelline.common.LocaleResolver;
+import com.mytravelline.common.RequestLocaleResolver;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.common.exception.ResourceNotFoundException;
@@ -29,7 +29,7 @@ public class BlogService {
 
     private final BlogPostRepository blogPostRepository;
     private final TranslationService translationService;
-    private final LocaleResolver localeResolver;
+    private final RequestLocaleResolver localeResolver;
 
     // ===== Public methods =====
 

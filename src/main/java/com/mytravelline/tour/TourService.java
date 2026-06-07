@@ -2,7 +2,7 @@ package com.mytravelline.tour;
 
 import com.mytravelline.category.Category;
 import com.mytravelline.category.CategoryRepository;
-import com.mytravelline.common.LocaleResolver;
+import com.mytravelline.common.RequestLocaleResolver;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.common.exception.ResourceNotFoundException;
@@ -48,7 +48,7 @@ public class TourService {
     private final S3StorageService s3StorageService;
     private final CurrencyService currencyService;
     private final TranslationService translationService;
-    private final LocaleResolver localeResolver;
+    private final RequestLocaleResolver localeResolver;
 
     // ===== Public methods =====
 

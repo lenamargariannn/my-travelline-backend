@@ -1,6 +1,6 @@
 package com.mytravelline.destination;
 
-import com.mytravelline.common.LocaleResolver;
+import com.mytravelline.common.RequestLocaleResolver;
 import com.mytravelline.common.exception.ResourceNotFoundException;
 import com.mytravelline.translation.LocaleCode;
 import com.mytravelline.translation.TranslationService;
@@ -22,7 +22,7 @@ public class DestinationService {
     private final DestinationRepository destinationRepository;
     private final DestinationMapper destinationMapper;
     private final TranslationService translationService;
-    private final LocaleResolver localeResolver;
+    private final RequestLocaleResolver localeResolver;
 
     public List<DestinationDto> getAllActiveDestinations(HttpServletRequest request) {
         LocaleCode locale = localeResolver.resolve(request);

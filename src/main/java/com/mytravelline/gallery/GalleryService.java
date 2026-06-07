@@ -1,6 +1,6 @@
 package com.mytravelline.gallery;
 
-import com.mytravelline.common.LocaleResolver;
+import com.mytravelline.common.RequestLocaleResolver;
 import com.mytravelline.common.PageResponse;
 import com.mytravelline.common.exception.ResourceNotFoundException;
 import com.mytravelline.storage.S3StorageService;
@@ -27,7 +27,7 @@ public class GalleryService {
     private final GalleryImageRepository galleryImageRepository;
     private final S3StorageService s3StorageService;
     private final TranslationService translationService;
-    private final LocaleResolver localeResolver;
+    private final RequestLocaleResolver localeResolver;
 
     public PageResponse<GalleryImageDto> getAllImages(int page, int size, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size);

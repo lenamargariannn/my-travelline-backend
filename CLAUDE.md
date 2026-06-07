@@ -132,7 +132,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 
 ### Database
 
-- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table).
+- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU).
 - `ddl-auto: validate` in all non-test profiles; Flyway owns the schema.
 - Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. It connects directly to a local PostgreSQL at `localhost:5432/mytravelline_test` (user `test` / password `test`) — **not** Testcontainers. The CI workflow provides a PostgreSQL service container for this.
 

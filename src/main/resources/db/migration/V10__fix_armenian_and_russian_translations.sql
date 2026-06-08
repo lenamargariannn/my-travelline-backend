@@ -537,51 +537,51 @@ WHERE entity_type = 'tour' AND entity_id = (SELECT id FROM tour WHERE slug = 'ky
 
 UPDATE translations
 SET value = 'Ինչու են Մալդիվները աշխարհի իդեալական մեղրամսային ուղղությունը', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'title';
 
 UPDATE translations
 SET value = 'Բյուրեղյա լագունաներ, ջրի վրա վիլլաներ, լիարժեք առանձնություն և անմոռանալի մայրամուտներ․ ահա թե ինչու են Մալդիվները գլխավորում մեղրամսի բոլոր ցանկերը։', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Ամեն տարի հազարավոր զույգեր Մալդիվներն ընտրում են մեղրամսի համար, և գրեթե բոլորը ասում են, որ իրականությունը գերազանցել է սպասելիքները։ Ո՞րն է Հնդկական օվկիանոսի այս արշիպելագի գաղտնիքը, որը նրան այդքան կատարյալ է դարձնում ռոմանտիկ հանգստի համար։</p><p><strong>Առանձնությունն իրական է։</strong> Մալդիվների գաղափարը կառուցված է մասնավոր կղզու շուրջ։ Շատ հանգստավայրեր զբաղեցնում են ամբողջական կղզի․ չկան օրվա զբոսաշրջիկներ, բազմություն, և հաճախ ձեր ջրային վիլլայի պատշգամբից այլ հյուրեր էլ չեն երևում։ Օվկիանոսը դառնում է ձերը։</p><p><strong>Տեսարանը անհավանական է։</strong> Այստեղ Հնդկական օվկիանոսը ստանում է գրեթե թվային թվացող կապույտ՝ լուսավոր փիրուզագույն լագունաներից մինչև բաց ջրի խոր կապույտը։</p><p><strong>Սպասարկումը բացառիկ է։</strong> Մալդիվյան հանգստավայրերը մշտապես դասվում են աշխարհի լավագույնների շարքում։ Անձնական սպասավորը ճանաչում է ձեր նախասիրությունները և կանխատեսում ձեր կարիքները։</p><p>Մալդիվները պարզապես ուղղություն չեն․ դրանք չափանիշ են, որի հետ կհամեմատեք ձեր բոլոր հետագա արձակուրդները։</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'HY' AND field = 'content';
 
 UPDATE translations
 SET value = 'Վրաստանի թաքնված կողմը․ Թբիլիսիից այն կողմ', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'title';
 
 UPDATE translations
 SET value = 'Ճանապարհորդների մեծ մասը տեսնում է միայն Թբիլիսին, բայց իրական Վրաստանը՝ հին քարանձավային քաղաքներ, լեռնային վանքեր և լեգենդար գինի, գտնվում է մայրաքաղաքից դուրս։', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Վրաստանը կամաց-կամաց դառնում է աշխարհի ամենահետաքրքիր ուղղություններից մեկը։ Թբիլիսին՝ միջնադարյան, կայսերական, խորհրդային և ժամանակակից ճարտարապետության խառնուրդով, Եվրոպայի ամենախարիզմատիկ քաղաքներից է։ Սակայն քաղաքից դուրս բացվում է շատ ավելի հին և խոր երկիր։</p><p><strong>Կազբեգի և Մեծ Կովկաս։</strong> Թբիլիսիից հյուսիս տանող Վրացական ռազմական ճանապարհը աշխարհի ամենադրամատիկ ավտոճանապարհներից է։ Գերգեթիի եկեղեցին՝ Կազբեկի ֆոնին, Կովկասի խորհրդանշական տեսարաններից է։</p><p><strong>Կախեթիի գինու շրջան։</strong> Վրաստանը համարվում է գինու հայրենիքը։ Քվևրիի մեթոդը տալիս է այն սաթագույն գինիները, որոնք գրավել են բնական գինու աշխարհը։</p><p><strong>Վարձիա քարանձավային քաղաք։</strong> XII դարում հրաբխային ժայռի մեջ փորված վանական քաղաքը Կովկասի ամենաառանձնահատուկ հուշարձաններից է։</p><p>Վրաստանը հետաքրքրասեր ճանապարհորդին վարձատրում է բացառիկ ջերմությամբ։</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'HY' AND field = 'content';
 
 UPDATE translations
 SET value = 'Առաջին անգամ Ճապոնիայում․ ինչ պետք է իմանալ ճանապարհորդությունից առաջ', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'title';
 
 UPDATE translations
 SET value = 'Գնացքների էթիկետից մինչև տաճարների կանոններ, կանխիկի մշակույթից մինչև կոնբինի նախաճաշեր․ կարևոր ուղեցույց Ճապոնիա առաջին անգամ մեկնողների համար։', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Ճապոնիան այն ուղղությունն է, որը պարգևատրում է պատրաստվածությանը։ Ոչ թե որովհետև բարդ է, այլ որովհետև մի քանի մշակութային նրբությունների ըմբռնումը լավ ճանապարհորդությունը դարձնում է գերազանց։</p><p><strong>JR Pass։</strong> Եթե այցելում եք մի քանի քաղաք, Japan Rail Pass-ը հաճախ արժե գնել մինչև մեկնումը։ Այն ընդգրկում է շինկանսենների և շատ տարածաշրջանային գնացքների ցանցը։</p><p><strong>Կանխիկը դեռ կարևոր է։</strong> Թեև Ճապոնիան տեխնոլոգիապես զարգացած է, շատ փոքր ռեստորաններ, սրբավայրեր և խանութներ քարտեր չեն ընդունում։</p><p><strong>Կոնբինի։</strong> Ճապոնական 24-ժամյա խանութները՝ 7-Eleven, Lawson, FamilyMart, իրականում հրաշալի են՝ տաք սնունդ, օնիգիրի, սուրճ, դեղեր և SIM քարտեր։</p><p><strong>Տաճարային էթիկետ։</strong> Տորիի դարպասով անցնելիս թեթևակի խոնարհվեք, լվացման վայրում ողողեք ձեռքերը և տաճարի շենք մտնելիս հանեք կոշիկները։</p><p>Ճապոնիան գերազանցում է սպասելիքները և փոխում է աշխարհի հանդեպ ձեր հայացքը։</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'HY' AND field = 'content';
 
 UPDATE translations
 SET value = 'Դուբայը երկնաքերերից այն կողմ․ քաղաք, որը զբոսաշրջիկների մեծ մասը չի տեսնում', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'title';
 
 UPDATE translations
 SET value = 'Դուբայը հայտնի է շքեղությամբ և ռեկորդներով, բայց առևտրի կենտրոններից ու երկնաքերերից այն կողմ կա պատմությամբ և մարդկայնությամբ լի քաղաք։', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Դուբայի միջազգային համբավը կառուցված է գերադրականների վրա՝ ամենաբարձր շենքը, ամենամեծ առևտրի կենտրոնը, ամենաշքեղ բրանչը։ Եվ թեև այս ամենը իրական է ու տպավորիչ, այն միայն մեկ շերտն է մի քաղաքի, որը արժե ավելի ուշադիր դիտել։</p><p><strong>Հին քաղաքը։</strong> Նստեք աբրա՝ ավանդական փայտե ջրային տաքսի, և անցեք Դուբայ Քրիքը ոսկու շուկայից դեպի համեմունքների շուկա։ Ջրի վրայով օդը բուրում է սանդալով, խնկով և զաֆրանով։ Սա Դուբայն է, որը գոյություն ուներ նավթի դարաշրջանից դարեր առաջ։</p><p><strong>Ալ Ֆահիդի պատմական թաղամաս։</strong> Քրիքի մոտ գտնվում է քամու աշտարակներով և նեղ ավազագույն նրբանցքներով թաղամասը։ Դուբայի թանգարանը տեղակայված է 1787 թվականի բերդում՝ քաղաքի ամենահին պահպանված շենքում։</p><p><strong>Անապատը գիշերը։</strong> Բուրջ Խալիֆայից քառասուն րոպե հեռու քաղաքը լուծվում է, և սկսվում է Արաբական անապատը։ Աստղերը ավազաթմբերի վրա հիշեցնում են, որ Դուբայի արդիականությունը կառուցված է շատ ավելի հին հիմքի վրա։</p><p>Եկեք ռեկորդների համար, մնացեք խորության համար։</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'HY' AND field = 'content';
 
 UPDATE translations
 SET value = 'Пляж и острова', updated_at = NOW()
@@ -1153,50 +1153,50 @@ WHERE entity_type = 'tour' AND entity_id = (SELECT id FROM tour WHERE slug = 'ky
 
 UPDATE translations
 SET value = 'Почему Мальдивы — идеальное место для медового месяца в мире', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'title';
 
 UPDATE translations
 SET value = 'Хрустальные лагуны, виллы над водой, полная приватность и закаты ни с чем не сравнимые — вот почему Мальдивы возглавляют каждый список медового месяца.', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Каждый год тысячи пар выбирают Мальдивы для медового месяца — и каждый год почти все они говорят, что реальность превзошла все ожидания. В чём секрет этого архипелага в Индийском океане, который делает его столь последовательно, подавляюще идеальным для романтики?</p><p><strong>Приватность настоящая.</strong> В отличие от большинства курортных направлений, концепция Мальдив построена на частном острове. Многие курорты занимают свой собственный остров целиком — никаких однодневных туристов, толп, и часто других гостей не видно с террасы вашей виллы над водой. Океан становится вашим.</p><p><strong>Пейзаж нереальный.</strong> Индийский океан здесь приобретает голубизну, которая кажется цифровой — светящийся, почти прозрачный бирюзовый в мелких лагунах, переходящий в чернильно-синий в открытой воде. Плавать в своём частном бассейне над ним на закате — всё равно что висеть внутри картины.</p><p><strong>Сервис исключительный.</strong> Мальдивские курорты неизменно входят в число лучших в мире по гостеприимству. Ваш личный дворецкий узнаёт ваши предпочтения при заезде и предугадывает каждую потребность — шампанское уже охлаждено, когда вы возвращаетесь со снорклинга.</p><p>Если вы планируете медовый месяц, Мальдивы — это не просто направление. Это эталон — воспоминание, с которым будет сравниваться каждый последующий отпуск. Наша команда специалистов готова сделать ваш совершенным.</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'why-maldives-perfect-honeymoon') AND locale = 'RU' AND field = 'content';
 
 UPDATE translations
 SET value = 'Скрытая сторона Грузии: за пределами Тбилиси', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'title';
 
 UPDATE translations
 SET value = 'Большинство путешественников видят только Тбилиси. Но настоящая Грузия — древние пещерные города, горные монастыри и легендарное вино — лежит в долинах и горных вершинах за столицей.', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Грузия тихо строит репутацию одного из самых удивительных направлений в мире. Тбилиси — со своим особым сочетанием средневековой, имперской русской, советской и современной архитектуры — один из самых харизматичных городов Европы. Но выйдите за пределы города, и вы откроете страну глубокой древней глубины.</p><p><strong>Казбеги и Большой Кавказ.</strong> Дорога на север от Тбилиси по Военно-Грузинской дороге — один из самых драматичных автомобильных маршрутов в мире. Церковь Гергети, стоящая на хребте высотой 2170 м с горой Казбек позади — один из определяющих образов всего Кавказа.</p><p><strong>Винный регион Кахети.</strong> Грузия считается родиной вина — люди производят виноград здесь не менее 8000 лет. Метод квеври — ферментация в глиняных кувшинах, закопанных в землю — даёт те самые янтарные вина, покорившие мир натурального вина.</p><p><strong>Пещерный город Вардзия.</strong> Высеченный в вулканической скале в XII веке, монастырский пещерный город Вардзия содержит более 3000 комнат, 13 этажей и церковь с оригинальными фресками. Один из самых выдающихся памятников Кавказа.</p><p>Грузия вознаграждает любопытного путешественника с исключительной щедростью. Приезжайте любопытным, уезжайте изменившимся.</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'hidden-side-of-georgia') AND locale = 'RU' AND field = 'content';
 
 UPDATE translations
 SET value = 'Первый раз в Японии: всё, что нужно знать перед поездкой', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'title';
 
 UPDATE translations
 SET value = 'От этикета в поездах до правил в храмах, от культуры наличных до завтраков в конбини — главное руководство для первых путешественников в Японию.', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Япония — направление, которое вознаграждает подготовку. Не потому что она сложная — Япония на самом деле одна из самых лёгких и логистически гладких стран в мире — но потому что понимание нескольких культурных нюансов превращает хорошую поездку в отличную.</p><p><strong>JR Pass.</strong> Если вы посещаете несколько городов, Japan Rail Pass почти наверняка стоит купить до отъезда из дома (в Японии его купить нельзя). Он покрывает сеть скоростных поездов синкансэн и большинство региональных поездов.</p><p><strong>Наличные — всё ещё главные.</strong> Несмотря на то что Япония — одна из самых технологически развитых стран мира, она остаётся удивительно ориентированной на наличные. Многие рестораны, святилища и небольшие магазины не принимают карты. Банкоматы 7-Eleven надёжно принимают иностранные карты.</p><p><strong>Конбини.</strong> Японские круглосуточные магазины — 7-Eleven, Lawson, FamilyMart — подлинно выдающиеся заведения: горячая еда, свежие онигири, кофе, пиво, лекарства, SIM-карты. Ваш завтрак из конбини будет лучше большинства гостиничных шведских столов.</p><p><strong>Этикет в храмах.</strong> Слегка поклонитесь, проходя через ворота тории. У раковин для омовения ополосните обе руки. Снимайте обувь перед входом в здания храма. Говорите тихо и воздерживайтесь от фотографии в священных помещениях.</p><p>Япония — страна, которая превзойдёт все ожидания. Глубина мастерства, культура еды, сочетание древней красоты и гиперсовременной энергии — ничто не подготавливает вас к реальности по-настоящему. Езжайте, и вернитесь изменившимися.</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'first-time-japan-guide') AND locale = 'RU' AND field = 'content';
 
 UPDATE translations
 SET value = 'Дубай за пределами небоскрёбов: город, которого большинство туристов не видит', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'title';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'title';
 
 UPDATE translations
 SET value = 'Дубай славится излишествами и зрелищностью — но за рекордами и торговыми центрами скрывается город удивительной глубины, истории и человечности.', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'excerpt';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'excerpt';
 
 UPDATE translations
 SET value = '<p>Международная репутация Дубая построена на суперлативах: самое высокое здание, самый большой торговый центр, самый горячий бранч. И хотя всё это реально и по-настоящему впечатляет, город, который они описывают — лишь один слой места, вознаграждающего более пристальное внимание.</p><p><strong>Старый город.</strong> Сядьте на абру — традиционное деревянное водное такси — и переправьтесь через Дубай-Крик от рынка золота к рынку пряностей. Воздух над водой пахнет сандалом, ладаном и шафраном. Торговые ряды завалены куркумой, сумахом и сушёными лепестками роз. Это Дубай, существовавший столетиями до нефтяной эпохи — и он по-прежнему живёт.</p><p><strong>Исторический квартал Аль-Фахиди.</strong> В 15 минутах ходьбы от крика — квартал ветряно-башенной архитектуры и узких песчаных переулков. Музей Дубая занимает форт 1787 года — самое старое сохранившееся здание города. Центр культурного взаимопонимания шейха Мохаммеда проводит завтраки «Открытые двери, открытые умы», где вы едите эмиратскую еду и получаете искренние ответы на любые вопросы об исламской культуре.</p><p><strong>Пустыня ночью.</strong> В сорока минутах от Бурдж-Халифы город растворяется и начинается Аравийская пустыня. Ночью, вдали от светового загрязнения, звёзды над дюнами поразительны. Провести вечер в бедуинском лагере, глядя на Млечный Путь — напоминание о том, что современность Дубая построена на чём-то гораздо более древнем и странном, чем стекло и сталь.</p><p>Приезжайте за рекордами, оставайтесь ради глубины. Дубай страннее и интереснее, чем его Instagram-профиль.</p>', updated_at = NOW()
-WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'content';
+WHERE entity_type = 'blog' AND entity_id = (SELECT id FROM blog_post WHERE slug = 'dubai-beyond-the-skyscrapers') AND locale = 'RU' AND field = 'content';
 
 COMMIT;

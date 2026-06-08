@@ -6,6 +6,8 @@ import com.mytravelline.admin.dto.SignupRequest;
 import com.mytravelline.admin.dto.TokenRefreshRequest;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.security.JwtService;
+import com.mytravelline.security.LoginRateLimiter;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -33,9 +36,10 @@ public class AuthController {
     private final JwtService jwtService;
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final LoginRateLimiter rateLimiter;
 
     @PostMapping("/signup")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("!${app.signup.require-admin:true} or hasRole('ADMIN')")
     public ResponseEntity<LoginResponse> signup(@Valid @RequestBody SignupRequest request) {
         if (adminUserRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");
@@ -67,10 +71,26 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request,
+                                               HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+
+        if (rateLimiter.isBlocked(ip)) {
+            log.warn("Login blocked (rate limit) for IP {} attempting email={}", ip, request.getEmail());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
+        }
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (BadCredentialsException e) {
+            rateLimiter.recordFailure(ip);
+            log.warn("Failed login attempt for email={} from IP {}", request.getEmail(), ip);
+            throw e;
+        }
+
+        rateLimiter.reset(ip);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
         AdminUser adminUser = adminUserRepository.findByEmail(request.getEmail())
@@ -87,7 +107,7 @@ public class AuthController {
                 .role(adminUser.getRole().name())
                 .build();
 
-        log.info("Admin login: email={}", adminUser.getEmail());
+        log.info("Admin login: email={} from IP {}", adminUser.getEmail(), ip);
         return ResponseEntity.ok(response);
     }
 

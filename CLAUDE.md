@@ -68,8 +68,10 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - JWT-based. `JwtAuthenticationFilter` validates tokens on every request; logs a `warn` for invalid/expired tokens.
 - Admin endpoints require authentication; public browsing endpoints are open.
 - `AdminUser` has a `role` field (`AdminRole` enum: `ADMIN`, `EDITOR`) for role-based access control.
-- Signup (`POST /api/admin/auth/signup`) is protected with `@PreAuthorize("hasRole('ADMIN')")` — only existing admins can create new users.
+- Signup (`POST /api/admin/auth/signup`) is controlled by `SIGNUP_REQUIRE_ADMIN` env var (default `true`). When true, only an existing ADMIN can create users. Set to `false` to allow open signup (useful for initial setup).
 - Default seed admin: `admin@mytravelline.com` / `Admin@123` (change in production — see `V2__seed_data.sql`).
+- **Login brute-force protection**: `LoginRateLimiter` blocks an IP for 15 minutes after 5 failed attempts within a 15-minute window. Returns **429 Too Many Requests**. In-memory per instance — not shared across ECS tasks.
+- **Real client IP**: `server.forward-headers-strategy: native` is set so `request.getRemoteAddr()` returns the actual client IP from `X-Forwarded-For` (not the ALB private IP).
 
 ### CORS
 
@@ -147,6 +149,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 | `DB_PASSWORD` | `localpassword` | Database password |
 | `JWT_SECRET` | (dev default) | Must be ≥256 bits for HS256 |
 | `ALLOWED_ORIGINS` | `http://localhost:5173,http://localhost:5174` | CORS — comma-separated, no spaces required but trimmed |
+| `SIGNUP_REQUIRE_ADMIN` | `true` | When `true`, `POST /api/admin/auth/signup` requires `ADMIN` role. Set `false` only for initial setup. |
 | `MEDIA_BUCKET` | `mytravelline-media-dev` | S3 bucket |
 | `CDN_URL` | *(empty)* | CloudFront base URL — when set, images are served as `{CDN_URL}/{s3Key}` instead of presigned URLs |
 | `AWS_REGION` | `us-east-1` | AWS region for S3 and SES |

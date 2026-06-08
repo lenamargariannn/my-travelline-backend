@@ -28,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final SignupGuard signupGuard;
 
     private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
@@ -41,8 +42,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     );
 
     private static final List<String> PUBLIC_POST_AUTH_PATTERNS = List.of(
-            "/api/admin/auth/login", "/api/admin/auth/refresh", "/api/admin/auth/signup"
+            "/api/admin/auth/login", "/api/admin/auth/refresh"
     );
+
+    private static final String SIGNUP_PATH = "/api/admin/auth/signup";
 
     private static final List<String> PUBLIC_ANY_PATTERNS = List.of(
             "/actuator/**", "/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"
@@ -63,6 +66,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (HttpMethod.POST.name().equals(method) &&
                 PUBLIC_POST_AUTH_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, path))) return true;
+
+        if (HttpMethod.POST.name().equals(method) &&
+                SIGNUP_PATH.equals(path) &&
+                !signupGuard.isAdminRequired()) return true;
 
         return PUBLIC_ANY_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, path));
     }

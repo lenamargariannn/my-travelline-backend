@@ -7,6 +7,7 @@ import com.mytravelline.admin.dto.TokenRefreshRequest;
 import com.mytravelline.common.exception.BadRequestException;
 import com.mytravelline.security.JwtService;
 import com.mytravelline.security.LoginRateLimiter;
+import com.mytravelline.security.SignupGuard;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,10 @@ public class AuthController {
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter rateLimiter;
+    private final SignupGuard signupGuard;
 
     @PostMapping("/signup")
-    @PreAuthorize("!${app.signup.require-admin:true} or hasRole('ADMIN')")
+    @PreAuthorize("!@signupGuard.isAdminRequired() or hasRole('ADMIN')")
     public ResponseEntity<LoginResponse> signup(@Valid @RequestBody SignupRequest request) {
         if (adminUserRepository.existsByEmail(request.getEmail())) {
             throw new BadRequestException("Email already in use");

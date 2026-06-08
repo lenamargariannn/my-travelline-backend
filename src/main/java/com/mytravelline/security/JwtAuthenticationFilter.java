@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     );
 
     private static final List<String> PUBLIC_POST_AUTH_PATTERNS = List.of(
-            "/api/admin/auth/login", "/api/admin/auth/refresh"
+            "/api/admin/auth/login", "/api/admin/auth/refresh", "/api/admin/auth/signup"
     );
 
     private static final List<String> PUBLIC_ANY_PATTERNS = List.of(

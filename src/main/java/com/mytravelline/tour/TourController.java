@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -40,23 +41,29 @@ public class TourController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String destination,
+            @RequestParam(required = false) String destinationSlug,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String currency,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) Integer travelers,
             HttpServletRequest request) {
 
-        PageResponse<TourSummaryDto> response;
+        String effectiveDestination = destinationSlug != null ? destinationSlug : destination;
+        return ResponseEntity.ok(tourService.filterTours(
+                category, effectiveDestination, search, startDate, travelers,
+                page, size, currency, request));
+    }
 
-        if (search != null && !search.isBlank()) {
-            response = tourService.searchTours(search, page, size, currency, request);
-        } else if (category != null && !category.isBlank()) {
-            response = tourService.getToursByCategory(category, page, size, currency, request);
-        } else if (destination != null && !destination.isBlank()) {
-            response = tourService.getToursByDestination(destination, page, size, currency, request);
-        } else {
-            response = tourService.getPublishedTours(page, size, currency, request);
-        }
+    @GetMapping("/api/tours/available-dates")
+    public ResponseEntity<List<String>> getAvailableDates(
+            @RequestParam(required = false) String destination) {
+        return ResponseEntity.ok(tourService.getAvailableDates(destination));
+    }
 
-        return ResponseEntity.ok(response);
+    @GetMapping("/api/tours/available-destinations")
+    public ResponseEntity<List<String>> getAvailableDestinations(
+            @RequestParam(required = false) String startDate) {
+        return ResponseEntity.ok(tourService.getAvailableDestinations(startDate));
     }
 
     @GetMapping("/api/tours/featured")

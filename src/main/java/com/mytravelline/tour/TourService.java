@@ -25,11 +25,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +97,37 @@ public class TourService {
                                                      String currency, HttpServletRequest request) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.searchPublishedTours(query, pageable);
+        LocaleCode locale = localeResolver.resolve(request);
+        return toPageResponse(tours, currency, locale);
+    }
+
+    public PageResponse<TourSummaryDto> filterTours(String categorySlug, String destinationSlug,
+                                                     String search, LocalDate startDate,
+                                                     Integer travelers, int page, int size,
+                                                     String currency, HttpServletRequest request) {
+        if (travelers != null && (travelers < 1 || travelers > 50)) {
+            throw new BadRequestException("travelers must be between 1 and 50");
+        }
+
+        Specification<Tour> spec = TourSpecifications.isPublished();
+        if (categorySlug != null && !categorySlug.isBlank()) {
+            spec = spec.and(TourSpecifications.hasCategory(categorySlug));
+        }
+        if (destinationSlug != null && !destinationSlug.isBlank()) {
+            spec = spec.and(TourSpecifications.hasDestination(destinationSlug));
+        }
+        if (search != null && !search.isBlank()) {
+            spec = spec.and(TourSpecifications.matchesSearch(search));
+        }
+        if (startDate != null) {
+            spec = spec.and(TourSpecifications.departsOnOrAfter(startDate));
+        }
+        if (travelers != null) {
+            spec = spec.and(TourSpecifications.hasMinGroupSize(travelers));
+        }
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Tour> tours = tourRepository.findAll(spec, pageable);
         LocaleCode locale = localeResolver.resolve(request);
         return toPageResponse(tours, currency, locale);
     }
@@ -411,6 +445,29 @@ public class TourService {
         if (targetCurrency == null || "USD".equalsIgnoreCase(targetCurrency)) return null;
         currencyService.validateCurrency(targetCurrency);
         return currencyService.convert(usdPrice, targetCurrency.toUpperCase());
+    }
+
+    public List<String> getAvailableDates(String destination) {
+        List<LocalDate> dates = (destination == null || destination.isBlank())
+                ? tourRepository.findAvailableDates()
+                : tourRepository.findAvailableDatesByDestination(destination);
+        return dates.stream()
+                .map(d -> String.format("%04d-%02d-01", d.getYear(), d.getMonthValue()))
+                .distinct()
+                .toList();
+    }
+
+    public List<String> getAvailableDestinations(String startDate) {
+        if (startDate == null || startDate.isBlank()) return List.of();
+        LocalDate parsed;
+        try {
+            parsed = LocalDate.parse(startDate);
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException("Invalid date format, expected yyyy-MM-dd: " + startDate);
+        }
+        LocalDate first = parsed.withDayOfMonth(1);
+        LocalDate last = first.withDayOfMonth(first.lengthOfMonth());
+        return tourRepository.findAvailableDestinationSlugs(first, last);
     }
 
     private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page, String currency, LocaleCode locale) {

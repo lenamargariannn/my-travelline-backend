@@ -21,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +58,9 @@ public class Tour extends BaseEntity {
 
     @Column(name = "max_group_size")
     private Integer maxGroupSize;
+
+    @Column(name = "departure_date")
+    private LocalDate departureDate;
 
     @Column(name = "cover_image")
     private String coverImage;

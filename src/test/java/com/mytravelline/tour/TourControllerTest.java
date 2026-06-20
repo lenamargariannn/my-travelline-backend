@@ -1,6 +1,5 @@
 package com.mytravelline.tour;
 
-import com.mytravelline.category.Category;
 import com.mytravelline.category.CategoryRepository;
 import com.mytravelline.destination.Destination;
 import com.mytravelline.destination.DestinationRepository;
@@ -28,17 +27,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class TourControllerTest {
 
-    @Autowired
-    MockMvc mockMvc;
-
-    @Autowired
-    TourRepository tourRepository;
-
-    @Autowired
-    DestinationRepository destinationRepository;
-
-    @Autowired
-    CategoryRepository categoryRepository;
+    @Autowired MockMvc mockMvc;
+    @Autowired TourRepository tourRepository;
+    @Autowired TourDepartureRepository tourDepartureRepository;
+    @Autowired DestinationRepository destinationRepository;
+    @Autowired CategoryRepository categoryRepository;
 
     private final List<Long> tourIds = new ArrayList<>();
     private final List<Long> destinationIds = new ArrayList<>();
@@ -46,70 +39,56 @@ class TourControllerTest {
     @BeforeEach
     void setUp() {
         Destination paris = destinationRepository.save(Destination.builder()
-                .name("Paris")
-                .slug("paris-test")
-                .country("France")
-                .build());
+                .name("Paris").slug("paris-test").country("France").build());
         destinationIds.add(paris.getId());
 
         Destination rome = destinationRepository.save(Destination.builder()
-                .name("Rome")
-                .slug("rome-test")
-                .country("Italy")
-                .build());
+                .name("Rome").slug("rome-test").country("Italy").build());
         destinationIds.add(rome.getId());
 
-        // Tour A: paris, maxGroupSize=10, departure in the future
+        // Tour A: paris, maxGroupSize=10, future departure
         Tour tourA = tourRepository.save(Tour.builder()
-                .title("Paris Highlights")
-                .slug("paris-highlights-test")
-                .price(BigDecimal.valueOf(1200))
-                .status(TourStatus.PUBLISHED)
-                .destination(paris)
-                .maxGroupSize(10)
-                .departureDate(LocalDate.of(2026, 8, 1))
-                .build());
+                .title("Paris Highlights").slug("paris-highlights-test")
+                .price(BigDecimal.valueOf(1200)).status(TourStatus.PUBLISHED)
+                .destination(paris).maxGroupSize(10).build());
         tourIds.add(tourA.getId());
+        tourDepartureRepository.save(TourDeparture.builder()
+                .tour(tourA).departureDate(LocalDate.of(2026, 8, 1)).availableSlots(10).build());
 
-        // Tour B: rome, maxGroupSize=5, departure in the future
+        // Tour B: rome, maxGroupSize=5, future departure
         Tour tourB = tourRepository.save(Tour.builder()
-                .title("Rome Essentials")
-                .slug("rome-essentials-test")
-                .price(BigDecimal.valueOf(900))
-                .status(TourStatus.PUBLISHED)
-                .destination(rome)
-                .maxGroupSize(5)
-                .departureDate(LocalDate.of(2026, 8, 1))
-                .build());
+                .title("Rome Essentials").slug("rome-essentials-test")
+                .price(BigDecimal.valueOf(900)).status(TourStatus.PUBLISHED)
+                .destination(rome).maxGroupSize(5).build());
         tourIds.add(tourB.getId());
+        tourDepartureRepository.save(TourDeparture.builder()
+                .tour(tourB).departureDate(LocalDate.of(2026, 8, 1)).availableSlots(5).build());
 
-        // Tour C: paris, maxGroupSize=3, departure in the past
+        // Tour C: paris, maxGroupSize=3, only a past departure
         Tour tourC = tourRepository.save(Tour.builder()
-                .title("Paris Weekend")
-                .slug("paris-weekend-test")
-                .price(BigDecimal.valueOf(600))
-                .status(TourStatus.PUBLISHED)
-                .destination(paris)
-                .maxGroupSize(3)
-                .departureDate(LocalDate.of(2026, 1, 1))
-                .build());
+                .title("Paris Weekend").slug("paris-weekend-test")
+                .price(BigDecimal.valueOf(600)).status(TourStatus.PUBLISHED)
+                .destination(paris).maxGroupSize(3).build());
         tourIds.add(tourC.getId());
+        tourDepartureRepository.save(TourDeparture.builder()
+                .tour(tourC).departureDate(LocalDate.of(2026, 1, 1)).build());
 
         // Tour D: draft — must never appear in public results
         Tour tourD = tourRepository.save(Tour.builder()
-                .title("Draft Paris Tour")
-                .slug("draft-paris-test")
-                .price(BigDecimal.valueOf(800))
-                .status(TourStatus.DRAFT)
-                .destination(paris)
-                .maxGroupSize(10)
-                .departureDate(LocalDate.of(2026, 8, 1))
-                .build());
+                .title("Draft Paris Tour").slug("draft-paris-test")
+                .price(BigDecimal.valueOf(800)).status(TourStatus.DRAFT)
+                .destination(paris).maxGroupSize(10).build());
         tourIds.add(tourD.getId());
+        tourDepartureRepository.save(TourDeparture.builder()
+                .tour(tourD).departureDate(LocalDate.of(2026, 8, 1)).build());
     }
 
     @AfterEach
     void tearDown() {
+        tourDepartureRepository.deleteAll(
+                tourDepartureRepository.findAll().stream()
+                        .filter(d -> tourIds.contains(d.getTour().getId()))
+                        .toList());
         tourRepository.deleteAllById(tourIds);
         destinationRepository.deleteAllById(destinationIds);
         tourIds.clear();
@@ -120,6 +99,7 @@ class TourControllerTest {
     void getTours_destinationSlug_returnsMatchingPublishedTours() throws Exception {
         mockMvc.perform(get("/api/tours").param("destinationSlug", "paris-test"))
                 .andExpect(status().isOk())
+                // Tours A and C are paris + published; Tour D is draft (excluded)
                 .andExpect(jsonPath("$.content", hasSize(2)))
                 .andExpect(jsonPath("$.content[?(@.title == 'Draft Paris Tour')]").doesNotExist());
     }
@@ -134,8 +114,8 @@ class TourControllerTest {
     }
 
     @Test
-    void getTours_startDate_returnsToursOnOrAfterDate() throws Exception {
-        // Tours A and B depart on 2026-08-01; Tour C departs 2026-01-01 (before filter)
+    void getTours_startDate_returnsOnlyToursWithFutureDeparture() throws Exception {
+        // Tours A and B have a future departure; Tour C's only departure is in the past
         mockMvc.perform(get("/api/tours").param("startDate", "2026-06-21"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(2)));
@@ -143,7 +123,7 @@ class TourControllerTest {
 
     @Test
     void getTours_allThreeCombined_returnsIntersection() throws Exception {
-        // paris-test + startDate >= 2026-06-21 + travelers >= 6 → only Tour A
+        // paris-test + future startDate + travelers >= 6 → only Tour A
         mockMvc.perform(get("/api/tours")
                         .param("destinationSlug", "paris-test")
                         .param("startDate", "2026-06-21")

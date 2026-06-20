@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -28,4 +29,5 @@ public class TourSummaryDto {
     private boolean featured;
     private String categoryName;
     private String destinationName;
+    private LocalDate nextDeparture;
 }

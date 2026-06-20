@@ -10,7 +10,9 @@ import com.mytravelline.currency.CurrencyService;
 import com.mytravelline.destination.Destination;
 import com.mytravelline.destination.DestinationRepository;
 import com.mytravelline.storage.S3StorageService;
+import com.mytravelline.tour.dto.CreateDepartureRequest;
 import com.mytravelline.tour.dto.CreateTourRequest;
+import com.mytravelline.tour.dto.TourDepartureDto;
 import com.mytravelline.tour.dto.TourDto;
 import com.mytravelline.tour.dto.UpdateTourRequest;
 import com.mytravelline.tour.dto.TourImageDto;
@@ -35,6 +37,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -46,6 +49,7 @@ public class TourService {
 
     private final TourRepository tourRepository;
     private final TourImageRepository tourImageRepository;
+    private final TourDepartureRepository tourDepartureRepository;
     private final CategoryRepository categoryRepository;
     private final DestinationRepository destinationRepository;
     private final S3StorageService s3StorageService;
@@ -65,8 +69,11 @@ public class TourService {
 
     public List<TourSummaryDto> getFeaturedTours(String currency, HttpServletRequest request) {
         LocaleCode locale = localeResolver.resolve(request);
-        return tourRepository.findFeaturedTours().stream()
-                .map(t -> toSummaryDto(t, currency, locale))
+        List<Tour> tours = tourRepository.findFeaturedTours();
+        List<Long> ids = tours.stream().map(Tour::getId).toList();
+        Map<Long, LocalDate> nextDepartures = ids.isEmpty() ? Map.of() : loadNextDepartures(ids);
+        return tours.stream()
+                .map(t -> toSummaryDto(t, currency, locale, nextDepartures.get(t.getId())))
                 .toList();
     }
 
@@ -137,7 +144,11 @@ public class TourService {
     public PageResponse<TourSummaryDto> getAllTours(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
         Page<Tour> tours = tourRepository.findAll(pageable);
-        return toPageResponse(tours, null, LocaleCode.EN);
+        List<TourSummaryDto> content = tours.getContent().stream()
+                .map(t -> toSummaryDto(t, null, LocaleCode.EN, null))
+                .toList();
+        return PageResponse.of(content, tours.getNumber(), tours.getSize(),
+                tours.getTotalElements(), tours.getTotalPages(), tours.isLast());
     }
 
     public TourDto getTourById(Long id) {
@@ -333,7 +344,8 @@ public class TourService {
 
     // ===== Mapping helpers =====
 
-    private TourSummaryDto toSummaryDto(Tour tour, String targetCurrency, LocaleCode locale) {
+    private TourSummaryDto toSummaryDto(Tour tour, String targetCurrency, LocaleCode locale,
+                                         LocalDate nextDeparture) {
         BigDecimal convertedPrice = resolveConvertedPrice(tour.getPrice(), targetCurrency);
 
         String title = tour.getTitle();
@@ -366,6 +378,7 @@ public class TourService {
                 .featured(tour.isFeatured())
                 .categoryName(categoryName)
                 .destinationName(destinationName)
+                .nextDeparture(nextDeparture)
                 .build();
     }
 
@@ -438,6 +451,8 @@ public class TourService {
                         .main(img.getS3Key().equals(tour.getCoverImage()))
                         .build()).toList())
                 .itineraryDays(itineraryDays)
+                .departures(tourDepartureRepository.findByTourIdOrderByDepartureDateAsc(tour.getId())
+                        .stream().map(this::toDepartureDto).toList())
                 .build();
     }
 
@@ -449,8 +464,8 @@ public class TourService {
 
     public List<String> getAvailableDates(String destination) {
         List<LocalDate> dates = (destination == null || destination.isBlank())
-                ? tourRepository.findAvailableDates()
-                : tourRepository.findAvailableDatesByDestination(destination);
+                ? tourDepartureRepository.findUpcomingDates()
+                : tourDepartureRepository.findUpcomingDatesByDestination(destination);
         return dates.stream()
                 .map(d -> String.format("%04d-%02d-01", d.getYear(), d.getMonthValue()))
                 .distinct()
@@ -467,14 +482,64 @@ public class TourService {
         }
         LocalDate first = parsed.withDayOfMonth(1);
         LocalDate last = first.withDayOfMonth(first.lengthOfMonth());
-        return tourRepository.findAvailableDestinationSlugs(first, last);
+        return tourDepartureRepository.findDestinationSlugsByDateRange(first, last);
+    }
+
+    public List<TourDepartureDto> getDepartures(Long tourId) {
+        if (!tourRepository.existsById(tourId)) {
+            throw new ResourceNotFoundException("Tour", "id", tourId);
+        }
+        return tourDepartureRepository.findByTourIdOrderByDepartureDateAsc(tourId).stream()
+                .map(this::toDepartureDto)
+                .toList();
+    }
+
+    @Transactional
+    public TourDepartureDto addDeparture(Long tourId, CreateDepartureRequest request) {
+        Tour tour = tourRepository.findById(tourId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tour", "id", tourId));
+        TourDeparture departure = TourDeparture.builder()
+                .tour(tour)
+                .departureDate(request.getDepartureDate())
+                .availableSlots(request.getAvailableSlots())
+                .build();
+        return toDepartureDto(tourDepartureRepository.save(departure));
+    }
+
+    @Transactional
+    public void deleteDeparture(Long tourId, Long departureId) {
+        if (!tourRepository.existsById(tourId)) {
+            throw new ResourceNotFoundException("Tour", "id", tourId);
+        }
+        if (!tourDepartureRepository.existsByIdAndTourId(departureId, tourId)) {
+            throw new ResourceNotFoundException("TourDeparture", "id", departureId);
+        }
+        tourDepartureRepository.deleteByIdAndTourId(departureId, tourId);
+    }
+
+    private TourDepartureDto toDepartureDto(TourDeparture d) {
+        return TourDepartureDto.builder()
+                .id(d.getId())
+                .departureDate(d.getDepartureDate())
+                .availableSlots(d.getAvailableSlots())
+                .build();
     }
 
     private PageResponse<TourSummaryDto> toPageResponse(Page<Tour> page, String currency, LocaleCode locale) {
+        List<Long> ids = page.getContent().stream().map(Tour::getId).toList();
+        Map<Long, LocalDate> nextDepartures = ids.isEmpty() ? Map.of() : loadNextDepartures(ids);
         List<TourSummaryDto> content = page.getContent().stream()
-                .map(t -> toSummaryDto(t, currency, locale))
+                .map(t -> toSummaryDto(t, currency, locale, nextDepartures.get(t.getId())))
                 .toList();
         return PageResponse.of(content, page.getNumber(), page.getSize(),
                 page.getTotalElements(), page.getTotalPages(), page.isLast());
+    }
+
+    private Map<Long, LocalDate> loadNextDepartures(List<Long> tourIds) {
+        return tourDepartureRepository.findNextDepartureDatesByTourIds(tourIds).stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (LocalDate) row[1]
+                ));
     }
 }

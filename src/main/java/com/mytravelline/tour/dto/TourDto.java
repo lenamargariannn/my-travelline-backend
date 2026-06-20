@@ -37,4 +37,5 @@ public class TourDto {
     private String destinationName;
     private List<TourImageDto> images;
     private List<TourItineraryDayDto> itineraryDays;
+    private List<TourDepartureDto> departures;
 }

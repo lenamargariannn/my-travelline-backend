@@ -1,7 +1,9 @@
 package com.mytravelline.tour;
 
 import com.mytravelline.common.PageResponse;
+import com.mytravelline.tour.dto.CreateDepartureRequest;
 import com.mytravelline.tour.dto.CreateTourRequest;
+import com.mytravelline.tour.dto.TourDepartureDto;
 import com.mytravelline.tour.dto.TourDto;
 import com.mytravelline.tour.dto.TourImageDto;
 import com.mytravelline.tour.dto.TourSummaryDto;
@@ -146,6 +148,26 @@ public class TourController {
             @PathVariable Long tourId,
             @PathVariable Long imageId) {
         tourService.deleteTourImage(tourId, imageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/api/admin/tours/{id}/departures")
+    public ResponseEntity<List<TourDepartureDto>> getDepartures(@PathVariable Long id) {
+        return ResponseEntity.ok(tourService.getDepartures(id));
+    }
+
+    @PostMapping("/api/admin/tours/{id}/departures")
+    public ResponseEntity<TourDepartureDto> addDeparture(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateDepartureRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(tourService.addDeparture(id, request));
+    }
+
+    @DeleteMapping("/api/admin/tours/{tourId}/departures/{departureId}")
+    public ResponseEntity<Void> deleteDeparture(
+            @PathVariable Long tourId,
+            @PathVariable Long departureId) {
+        tourService.deleteDeparture(tourId, departureId);
         return ResponseEntity.noContent().build();
     }
 

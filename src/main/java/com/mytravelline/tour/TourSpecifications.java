@@ -31,7 +31,15 @@ public class TourSpecifications {
     }
 
     public static Specification<Tour> departsOnOrAfter(LocalDate date) {
-        return (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("departureDate"), date);
+        return (root, query, cb) -> {
+            var sub = query.subquery(Long.class);
+            var dep = sub.from(TourDeparture.class);
+            sub.select(dep.get("id")).where(cb.and(
+                    cb.equal(dep.get("tour"), root),
+                    cb.greaterThanOrEqualTo(dep.get("departureDate"), date)
+            ));
+            return cb.exists(sub);
+        };
     }
 
     public static Specification<Tour> hasMinGroupSize(int travelers) {

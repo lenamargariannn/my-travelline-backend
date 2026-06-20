@@ -21,7 +21,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,9 +58,6 @@ public class Tour extends BaseEntity {
     @Column(name = "max_group_size")
     private Integer maxGroupSize;
 
-    @Column(name = "departure_date")
-    private LocalDate departureDate;
-
     @Column(name = "cover_image")
     private String coverImage;
 
@@ -91,4 +87,9 @@ public class Tour extends BaseEntity {
     @OrderBy("dayNumber ASC")
     @Builder.Default
     private List<TourItineraryDay> itineraryDays = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tour", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("departureDate ASC")
+    @Builder.Default
+    private List<TourDeparture> departures = new ArrayList<>();
 }

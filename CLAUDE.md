@@ -39,7 +39,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 |---|---|
 | `admin` | `AdminUser` entity, `AdminUserRepository`, `AuthController` (login/refresh/signup), `AdminUserController` (user listing/deletion), `AdminDashboardController`, `AdminRole` enum; `dto/` sub-package |
 | `currency` | `CurrencyService` (in-memory rates, USD→X conversion), `CurrencyCode` enum, `CurrencyController` (public), `AdminCurrencyController` (admin), `CurrencyInfo` DTO |
-| `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `TourSpecifications` (JPA Specification predicates for filtering); `dto/` sub-package for request/response types |
+| `tour` | Most complex domain — `Tour` with nested `TourImage`, `TourItineraryDay`, and `TourDeparture` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `TourDepartureRepository`; `TourSpecifications` (JPA Specification predicates for filtering); `dto/` sub-package for request/response types |
 | `booking` | Customer bookings linked to tours; `BookingStatus` enum |
 | `category` | Tour categories with slugs |
 | `destination` | Travel destinations with slugs |
@@ -83,6 +83,21 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - Allowed methods: `GET POST PUT PATCH DELETE OPTIONS`. Allowed headers: `Content-Type Authorization`. Credentials: `true`. Max-age: 3600 s. Path: `/**`.
 - If a deployed instance returns 0 CORS headers, the first thing to check is whether `ALLOWED_ORIGINS` is set correctly in the ECS task definition — an unrecognised origin deliberately returns no headers by spec.
 
+### Tour departures
+
+Tours run on fixed group departure dates. Each tour can have many scheduled departures.
+
+**Schema** — `tour_departure(id, tour_id, departure_date DATE NOT NULL, available_slots INTEGER nullable, created_at, updated_at)`. Cascade-deleted with the parent tour.
+
+**`TourSummaryDto`** includes `nextDeparture` (nearest upcoming `departure_date`, null if none). Batch-loaded in a single query per page — no N+1.
+
+**`TourDto`** (full detail) includes `departures: [{id, departureDate, availableSlots}]` ordered by date ASC.
+
+**Admin departure endpoints** (require authentication):
+- `GET /api/admin/tours/{id}/departures` — list all departures for a tour
+- `POST /api/admin/tours/{id}/departures` — add a departure; body `{"departureDate": "yyyy-MM-dd", "availableSlots": 12}` (`availableSlots` optional, `departureDate` required)
+- `DELETE /api/admin/tours/{tourId}/departures/{departureId}` — remove a departure
+
 ### Tour filters (public API)
 
 `GET /api/tours` supports the following optional query params — all combinable with AND, all preserve `?currency=` and pagination:
@@ -93,16 +108,14 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 | `destination` | String (slug) | Tours for this destination (legacy param) |
 | `destinationSlug` | String (slug) | Same as `destination`; takes precedence if both are supplied. Use this for the hero widget. |
 | `search` | String | Case-insensitive title/summary match |
-| `startDate` | `yyyy-MM-dd` | Tours with `departure_date >= startDate`; invalid format → 400 |
+| `startDate` | `yyyy-MM-dd` | Tours that have at least one departure on or after this date (EXISTS subquery on `tour_departure`); invalid format → 400 |
 | `travelers` | Integer 1–50 | Tours where `max_group_size >= travelers`; out of range → 400; tours with null `max_group_size` are excluded |
 
 The query is built via `TourSpecifications` + `JpaSpecificationExecutor` (no JPQL branching). To add a new filter, add a predicate in `TourSpecifications` and wire it in `TourService.filterTours()`.
 
 **Hero widget helper endpoints** (public, no auth):
-- `GET /api/tours/available-dates?destination={slug}` — returns future departure months as `["yyyy-MM-01", …]` (month keys, not exact dates). Used to populate the month-picker.
+- `GET /api/tours/available-dates?destination={slug}` — returns future departure months as `["yyyy-MM-01", …]` (month keys). Only published tours, only `departure_date >= today`.
 - `GET /api/tours/available-destinations?startDate=yyyy-MM-01` — returns destination slugs that have at least one published tour departing in the given month. Invalid date → 400.
-
-**`departureDate` and the admin panel** — `Tour.departureDate` (`LocalDate`, nullable, column `departure_date`) is not exposed in `CreateTourRequest` / `UpdateTourRequest`. It can only be set directly in the DB for now. Extend the admin request DTOs and `TourService.createTour`/`updateTour` when the admin UI needs it.
 
 ### Tour images
 
@@ -156,7 +169,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 
 ### Database
 
-- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU), V7 (reseed production data), V8 (HY/RU translations for V7 content), V9 (fix Armenian translations), V10 (fix Armenian and Russian translations), V11 (add `departure_date DATE` to `tour`).
+- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU), V7 (reseed production data), V8 (HY/RU translations for V7 content), V9 (fix Armenian translations), V10 (fix Armenian and Russian translations), V11 (add `departure_date` to `tour` — superseded by V12), V12 (create `tour_departure` table, drop `departure_date` from `tour`).
 - `ddl-auto: validate` in all non-test profiles; Flyway owns the schema.
 - Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. It connects directly to a local PostgreSQL at `localhost:5432/mytravelline_test` (user `test` / password `test`) — **not** Testcontainers. The CI workflow provides a PostgreSQL service container for this.
 

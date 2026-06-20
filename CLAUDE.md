@@ -39,7 +39,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 |---|---|
 | `admin` | `AdminUser` entity, `AdminUserRepository`, `AuthController` (login/refresh/signup), `AdminUserController` (user listing/deletion), `AdminDashboardController`, `AdminRole` enum; `dto/` sub-package |
 | `currency` | `CurrencyService` (in-memory rates, USD→X conversion), `CurrencyCode` enum, `CurrencyController` (public), `AdminCurrencyController` (admin), `CurrencyInfo` DTO |
-| `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `dto/` sub-package for request/response types |
+| `tour` | Most complex domain — `Tour` with nested `TourImage` and `TourItineraryDay` collections; `TourStatus` enum (DRAFT/PUBLISHED); `TourImageRepository`; `TourSpecifications` (JPA Specification predicates for filtering); `dto/` sub-package for request/response types |
 | `booking` | Customer bookings linked to tours; `BookingStatus` enum |
 | `category` | Tour categories with slugs |
 | `destination` | Travel destinations with slugs |
@@ -56,6 +56,7 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 ### Key patterns
 
 - **MapStruct** is used for DTO↔entity mapping (see `CategoryMapper`, `DestinationMapper`). MapStruct processors run at compile time; annotation processor order matters: Lombok → MapStruct (configured in `pom.xml`).
+- **JPA Specifications** (`TourSpecifications`) are used for the public tour listing. `TourRepository` extends `JpaSpecificationExecutor<Tour>`; `TourService.filterTours()` composes predicates dynamically. Do not go back to the old if/else branching — Specifications are the correct extension point for any new tour filter.
 - **`BaseEntity`** provides `id`, `createdAt`, `updatedAt` to all entities.
 - **`AppProperties`** (`app.*` in `application.yml`) is the single typed config holder for JWT, CORS, S3, and SES settings — prefer injecting this over `@Value`.
 - **`GlobalExceptionHandler`** returns `ApiError` for all exceptions. Logging levels: `warn` for 4xx (validation, not found, bad request, bad credentials, access denied); `error` for unhandled 5xx. `ResourceNotFoundException` → 404, `BadRequestException` → 400.
@@ -81,6 +82,27 @@ Each domain lives in a flat package under `com.mytravelline.<domain>` — entity
 - OPTIONS preflight requests return **204** and bypass the rest of the filter chain.
 - Allowed methods: `GET POST PUT PATCH DELETE OPTIONS`. Allowed headers: `Content-Type Authorization`. Credentials: `true`. Max-age: 3600 s. Path: `/**`.
 - If a deployed instance returns 0 CORS headers, the first thing to check is whether `ALLOWED_ORIGINS` is set correctly in the ECS task definition — an unrecognised origin deliberately returns no headers by spec.
+
+### Tour filters (public API)
+
+`GET /api/tours` supports the following optional query params — all combinable with AND, all preserve `?currency=` and pagination:
+
+| Param | Type | Behavior |
+|---|---|---|
+| `category` | String (slug) | Tours in this category |
+| `destination` | String (slug) | Tours for this destination (legacy param) |
+| `destinationSlug` | String (slug) | Same as `destination`; takes precedence if both are supplied. Use this for the hero widget. |
+| `search` | String | Case-insensitive title/summary match |
+| `startDate` | `yyyy-MM-dd` | Tours with `departure_date >= startDate`; invalid format → 400 |
+| `travelers` | Integer 1–50 | Tours where `max_group_size >= travelers`; out of range → 400; tours with null `max_group_size` are excluded |
+
+The query is built via `TourSpecifications` + `JpaSpecificationExecutor` (no JPQL branching). To add a new filter, add a predicate in `TourSpecifications` and wire it in `TourService.filterTours()`.
+
+**Hero widget helper endpoints** (public, no auth):
+- `GET /api/tours/available-dates?destination={slug}` — returns future departure months as `["yyyy-MM-01", …]` (month keys, not exact dates). Used to populate the month-picker.
+- `GET /api/tours/available-destinations?startDate=yyyy-MM-01` — returns destination slugs that have at least one published tour departing in the given month. Invalid date → 400.
+
+**`departureDate` and the admin panel** — `Tour.departureDate` (`LocalDate`, nullable, column `departure_date`) is not exposed in `CreateTourRequest` / `UpdateTourRequest`. It can only be set directly in the DB for now. Extend the admin request DTOs and `TourService.createTour`/`updateTour` when the admin UI needs it.
 
 ### Tour images
 
@@ -134,7 +156,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 
 ### Database
 
-- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU).
+- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU), V7 (reseed production data), V8 (HY/RU translations for V7 content), V9 (fix Armenian translations), V10 (fix Armenian and Russian translations), V11 (add `departure_date DATE` to `tour`).
 - `ddl-auto: validate` in all non-test profiles; Flyway owns the schema.
 - Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. It connects directly to a local PostgreSQL at `localhost:5432/mytravelline_test` (user `test` / password `test`) — **not** Testcontainers. The CI workflow provides a PostgreSQL service container for this.
 

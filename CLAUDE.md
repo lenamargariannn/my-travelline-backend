@@ -154,7 +154,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 
 **Cascade delete** — every domain delete method calls `translationService.deleteAll(entityType, id)` before deleting the entity, preventing orphan rows.
 
-**NOT translated:** Booking, Contact, Review, AdminUser, tour image filenames/S3 keys.
+**NOT translated:** Booking, Contact, Review, AdminUser, tour image filenames/S3 keys, TourDeparture fields.
 
 ### Multi-currency
 
@@ -169,7 +169,7 @@ Supported locales: **EN** (default/fallback), **HY** (Armenian), **RU** (Russian
 
 ### Database
 
-- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU), V7 (reseed production data), V8 (HY/RU translations for V7 content), V9 (fix Armenian translations), V10 (fix Armenian and Russian translations), V11 (add `departure_date` to `tour` — superseded by V12), V12 (create `tour_departure` table, drop `departure_date` from `tour`).
+- Flyway migrations in `src/main/resources/db/migration/` — versioned `V{n}__description.sql`. Current migrations: V1 (schema), V2 (seed admin), V3 (seed content), V4 (currency column), V5 (translations table), V6 (fix translations locale check constraint to uppercase EN/HY/RU), V7 (reseed production data), V8 (HY/RU translations for V7 content), V9 (fix Armenian translations), V10 (fix Armenian and Russian translations), V11 (adds `departure_date DATE` to `tour`), V12 (creates `tour_departure` table; drops `departure_date` from `tour`). Note: V11 and V12 both run on a fresh DB — V11 adds the column and V12 immediately replaces it with the proper one-to-many table.
 - `ddl-auto: validate` in all non-test profiles; Flyway owns the schema.
 - Test profile (`application-test.yml`) disables Flyway and uses `create-drop`. It connects directly to a local PostgreSQL at `localhost:5432/mytravelline_test` (user `test` / password `test`) — **not** Testcontainers. The CI workflow provides a PostgreSQL service container for this.
 

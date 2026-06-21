@@ -51,4 +51,6 @@ public class UpdateTourRequest {
     private Long destinationId;
 
     private List<TourItineraryDayDto> itineraryDays;
+
+    private List<TourDepartureDto> departures;
 }

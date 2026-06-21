@@ -51,4 +51,6 @@ public class CreateTourRequest {
     private Long destinationId;
 
     private List<TourItineraryDayDto> itineraryDays;
+
+    private List<TourDepartureDto> departures;
 }

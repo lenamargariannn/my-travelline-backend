@@ -216,6 +216,16 @@ public class TourService {
             });
         }
 
+        if (request.getDepartures() != null) {
+            request.getDepartures().stream()
+                    .filter(dep -> dep.getDepartureDate() != null)
+                    .forEach(dep -> tour.getDepartures().add(TourDeparture.builder()
+                            .departureDate(dep.getDepartureDate())
+                            .availableSlots(dep.getAvailableSlots())
+                            .tour(tour)
+                            .build()));
+        }
+
         Tour saved = tourRepository.save(tour);
         return toFullDto(saved, null, LocaleCode.EN);
     }
@@ -267,6 +277,17 @@ public class TourService {
                         .build();
                 tour.getItineraryDays().add(day);
             });
+        }
+
+        if (request.getDepartures() != null) {
+            tour.getDepartures().clear();
+            request.getDepartures().stream()
+                    .filter(dep -> dep.getDepartureDate() != null)
+                    .forEach(dep -> tour.getDepartures().add(TourDeparture.builder()
+                            .departureDate(dep.getDepartureDate())
+                            .availableSlots(dep.getAvailableSlots())
+                            .tour(tour)
+                            .build()));
         }
 
         return toFullDto(tourRepository.save(tour), null, LocaleCode.EN);
